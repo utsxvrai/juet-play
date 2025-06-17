@@ -46,11 +46,18 @@ const HomePage = () => {
           </div>
         </section>
 
-        <section className="text-center mt-12">
+        <section className="text-center mt-12 flex flex-col sm:flex-row justify-center items-center gap-4">
           <button 
+            onClick={() => navigate('/host')}
             className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-bold py-4 px-12 text-xl rounded-lg shadow-xl hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-0.5 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-emerald-300 focus:ring-opacity-75 active:scale-95"
           >
             Host a Match
+          </button>
+          <button
+            onClick={() => navigate('/add-team')}
+            className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold py-4 px-12 text-xl rounded-lg shadow-xl hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-0.5 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 focus:ring-opacity-75 active:scale-95"
+          >
+            Add Team
           </button>
         </section>
       </main>

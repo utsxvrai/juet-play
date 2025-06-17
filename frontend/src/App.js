@@ -18,9 +18,20 @@ import VolleyballTeamsPage from './pages/volleyball/VolleyballTeamsPage';
 // Basketball Imports
 import BasketballMatchesPage from './pages/basketball/BasketballMatchesPage';
 import BasketballTeamsPage from './pages/basketball/BasketballTeamsPage';
+import BasketballMatchDetailsPage from './pages/basketball/match/BasketballMatchDetailsPage';
+import BasketballTeamDetailsPage from './pages/basketball/team/BasketballTeamDetailsPage';
+import AddBasketballTeamPage from './pages/basketball/AddBasketballTeamPage';
 
 // Placeholder for other sports pages
 // import BasketballPage from './pages/basketball/BasketballPage'; 
+
+import AddTeamPage from './pages/AddTeamPage';
+
+import HostMatchSportSelectPage from './pages/host/HostMatchSportSelectPage';
+import HostCricketPage from './pages/host/HostCricketPage';
+import HostFootballPage from './pages/host/HostFootballPage';
+import HostVolleyballPage from './pages/host/HostVolleyballPage';
+import HostBasketballPage from './pages/host/HostBasketballPage';
 
 const App = () => {
   return (
@@ -49,7 +60,17 @@ const App = () => {
       <Route path="/basketball" element={<BasketballMatchesPage />} />
       <Route path="/basketball/matches" element={<BasketballMatchesPage />} />
       <Route path="/basketball/teams" element={<BasketballTeamsPage />} />
-      {/* TODO: Add /basketball/match/:matchId and /basketball/team/:teamId/details routes */}
+      <Route path="/basketball/teams/add" element={<AddBasketballTeamPage />} />
+      <Route path="/basketball/match/:matchId" element={<BasketballMatchDetailsPage />} />
+      <Route path="/basketball/team/:teamId" element={<BasketballTeamDetailsPage />} />
+
+      <Route path="/add-team" element={<AddTeamPage />} />
+
+      <Route path="/host" element={<HostMatchSportSelectPage />} />
+      <Route path="/host/cricket" element={<HostCricketPage />} />
+      <Route path="/host/football" element={<HostFootballPage />} />
+      <Route path="/host/volleyball" element={<HostVolleyballPage />} />
+      <Route path="/host/basketball" element={<HostBasketballPage />} />
 
     </Routes>
   );
