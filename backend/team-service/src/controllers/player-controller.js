@@ -36,12 +36,16 @@ async function getAllPlayers(req, res) {
 // Get a player by ID
 async function getPlayerById(req, res) {
   try {
-    const player = await PlayerService.getById(req.params.playerId);
+    const player = await PlayerService.getPlayer(req.params.playerId);
+    if (!player) {
+      ErrorResponse.message = "Player not found";
+      return res.status(StatusCodes.NOT_FOUND).json(ErrorResponse);
+    }
     SuccessResponse.data = player;
     return res.status(StatusCodes.OK).json(SuccessResponse);
   } catch (error) {
     ErrorResponse.message = error.message;
-    return res.status(StatusCodes.NOT_FOUND).json(ErrorResponse);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(ErrorResponse);
   }
 }
 

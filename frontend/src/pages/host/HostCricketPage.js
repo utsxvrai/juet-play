@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import TeamAutocompleteInput from '../../components/common/TeamAutocompleteInput';
+import HostMatchTournamentSelect from '../../components/common/HostMatchTournamentSelect';
+import HostMatchTournamentCreateModal from '../../components/common/HostMatchTournamentCreateModal';
 import { useNavigate } from 'react-router-dom';
 import CricketPageLayout from '../../components/cricket/CricketPageLayout'; // Or a more generic HostPageLayout
 
@@ -15,18 +18,51 @@ const HostCricketPage = () => {
     time: '',
     // Add more fields like toss, umpire, etc. as needed
   });
+  const [selectedTournament, setSelectedTournament] = useState('');
+  const [showCreateTournament, setShowCreateTournament] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setMatchDetails(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Logic to submit match details to backend/state management
-    console.log('Hosting Cricket Match:', matchDetails);
-    alert('Cricket match hosting data (see console). Backend integration needed.');
-    navigate('/host'); // Or to a success page / match dashboard
+    // Fetch teams by name (in real app, use dropdowns or IDs)
+    const teamARes = await fetch(`http://localhost:3001/api/v1/team?name=${encodeURIComponent(matchDetails.teamAName)}`);
+    const teamAData = await teamARes.json();
+    const teamA = teamAData.data && teamAData.data[0];
+    const teamBRes = await fetch(`http://localhost:3001/api/v1/team?name=${encodeURIComponent(matchDetails.teamBName)}`);
+    const teamBData = await teamBRes.json();
+    const teamB = teamBData.data && teamBData.data[0];
+    if (!teamA || !teamB) {
+      alert('Both teams must exist.');
+      return;
+    }
+    const payload = {
+      sport: 'CRICKET',
+      status: 'upcoming',
+      startTime: new Date(`${matchDetails.date}T${matchDetails.time}`),
+      location: matchDetails.venue,
+      teams: [
+        { teamId: teamA._id, name: teamA.name, score: {} },
+        { teamId: teamB._id, name: teamB.name, score: {} }
+      ],
+      overs: matchDetails.overs,
+      tournamentId: selectedTournament || undefined
+    };
+    const res = await fetch('http://localhost:3002/api/v1/match/host', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      alert('Match hosted successfully!');
+      navigate('/host');
+    } else {
+      const data = await res.json();
+      alert(data.message || 'Failed to host match');
+    }
   };
 
   return (
@@ -36,6 +72,16 @@ const HostCricketPage = () => {
         <div className="text-emerald-300 font-semibold text-lg mb-2">Step 1: Match Details</div>
       </div>
       <div className="max-w-2xl mx-auto bg-slate-800/70 p-6 md:p-8 rounded-xl shadow-2xl">
+        <HostMatchTournamentSelect
+          selectedTournament={selectedTournament}
+          setSelectedTournament={setSelectedTournament}
+          onCreateNew={() => setShowCreateTournament(true)}
+        />
+        <HostMatchTournamentCreateModal
+          show={showCreateTournament}
+          onClose={() => setShowCreateTournament(false)}
+          onCreate={t => setSelectedTournament(t._id)}
+        />
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="matchTitle" className="block text-sm font-medium text-emerald-300 mb-1">Match Title</label>
@@ -58,18 +104,18 @@ const HostCricketPage = () => {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="teamAName" className="block text-sm font-medium text-emerald-300 mb-1">Team A Name</label>
-              <input type="text" name="teamAName" id="teamAName" value={matchDetails.teamAName} onChange={handleChange} required
-                     className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-md shadow-sm py-2 px-3 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition-all" />
-              <p className="text-xs text-slate-400 mt-1">E.g., India</p>
-            </div>
-            <div>
-              <label htmlFor="teamBName" className="block text-sm font-medium text-emerald-300 mb-1">Team B Name</label>
-              <input type="text" name="teamBName" id="teamBName" value={matchDetails.teamBName} onChange={handleChange} required
-                     className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-md shadow-sm py-2 px-3 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition-all" />
-              <p className="text-xs text-slate-400 mt-1">E.g., Australia</p>
-            </div>
+            <TeamAutocompleteInput
+              label="Team A Name"
+              value={matchDetails.teamAName}
+              onChange={val => setMatchDetails(prev => ({ ...prev, teamAName: val }))}
+              placeholder="Type to search teams..."
+            />
+            <TeamAutocompleteInput
+              label="Team B Name"
+              value={matchDetails.teamBName}
+              onChange={val => setMatchDetails(prev => ({ ...prev, teamBName: val }))}
+              placeholder="Type to search teams..."
+            />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>

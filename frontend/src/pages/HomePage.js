@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const HomePage = () => {
   const navigate = useNavigate();
+  // Management login modal state
+  const [showModal, setShowModal] = useState(false);
+  const [login, setLogin] = useState({ email: '', password: '' });
+  const [loginError, setLoginError] = useState('');
   const sports = [
     { name: 'Cricket', emoji: '🏏', path: '/cricket' },
     { name: 'Football', emoji: '⚽', path: '/football' },
@@ -10,8 +14,26 @@ const HomePage = () => {
     { name: 'Basketball', emoji: '🏀', path: '/basketball' },
   ];
 
+
   const handleSportClick = (path) => {
     navigate(path);
+  };
+
+  const handleLoginChange = (e) => {
+    const { name, value } = e.target;
+    setLogin(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    if (login.email === '221b425' && login.password === '1234') {
+      setShowModal(false);
+      setLoginError('');
+      setLogin({ email: '', password: '' });
+      navigate('/host');
+    } else {
+      setLoginError('Invalid email or password.');
+    }
   };
 
   return (
@@ -47,8 +69,8 @@ const HomePage = () => {
         </section>
 
         <section className="text-center mt-12 flex flex-col sm:flex-row justify-center items-center gap-4">
-          <button 
-            onClick={() => navigate('/host')}
+          <button
+            onClick={() => setShowModal(true)}
             className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-bold py-4 px-12 text-xl rounded-lg shadow-xl hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-0.5 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-emerald-300 focus:ring-opacity-75 active:scale-95"
           >
             Host a Match
@@ -60,6 +82,33 @@ const HomePage = () => {
             Add Team
           </button>
         </section>
+
+        {/* Management Login Modal */}
+        {showModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+            <div className="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-xs relative">
+              <h2 className="text-lg font-bold text-emerald-400 mb-4">Management Login</h2>
+              <form onSubmit={handleLoginSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="email" className="block text-sm text-emerald-300 mb-1">Email/ID</label>
+                  <input type="text" name="email" id="email" value={login.email} onChange={handleLoginChange} required
+                    className="w-full bg-slate-700 border-slate-600 text-white rounded-md py-2 px-3" />
+                </div>
+                <div>
+                  <label htmlFor="password" className="block text-sm text-emerald-300 mb-1">Password</label>
+                  <input type="password" name="password" id="password" value={login.password} onChange={handleLoginChange} required
+                    className="w-full bg-slate-700 border-slate-600 text-white rounded-md py-2 px-3" />
+                </div>
+                {loginError && <p className="text-red-400 text-xs">{loginError}</p>}
+                <div className="flex justify-end space-x-2 mt-4">
+                  <button type="button" onClick={() => { setShowModal(false); setLoginError(''); setLogin({ email: '', password: '' }); }}
+                    className="px-4 py-1 border border-slate-600 text-slate-300 rounded-md hover:bg-slate-700">Cancel</button>
+                  <button type="submit" className="px-4 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md">Login</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </main>
 
       <footer className="mt-auto pt-12 text-center text-slate-500 text-sm">

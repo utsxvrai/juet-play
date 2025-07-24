@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TeamListItem from '../../components/cricket/TeamListItem';
 import CricketPageLayout from '../../components/cricket/CricketPageLayout';
@@ -6,15 +6,29 @@ import CricketPageLayout from '../../components/cricket/CricketPageLayout';
 const CricketTeamsPage = () => {
   const navigate = useNavigate();
 
-  // Sample data - replace with API call later
-  const teams = [
-    { id: 1, name: 'India National Team', captain: 'Rohit G. Sharma', coach: 'Rahul S. Dravid', logo: 'https://via.placeholder.com/80/0000FF/FFFFFF?Text=IND' },
-    { id: 2, name: 'Australia National Team', captain: 'Patrick J. Cummins', coach: 'Andrew G. McDonald', logo: 'https://via.placeholder.com/80/FFDF00/000000?Text=AUS' },
-    { id: 3, name: 'England Lions', captain: 'Joseph C. Buttler', coach: 'Matthew P. Mott', logo: 'https://via.placeholder.com/80/CF142B/FFFFFF?Text=ENG' },
-    { id: 4, name: 'Pakistan Shaheens', captain: 'Babar Azam', coach: 'Saqlain Mushtaq', logo: 'https://via.placeholder.com/80/006400/FFFFFF?Text=PAK' },
-    { id: 5, name: 'New Zealand Kiwis', captain: 'Kane S. Williamson', coach: 'Gary Stead', logo: 'https://via.placeholder.com/80/000000/FFFFFF?Text=NZ' },
-    { id: 6, name: 'South Africa Proteas', captain: 'Temba Bavuma', coach: 'Shukri Conrad', logo: 'https://via.placeholder.com/80/008000/FFFFFF?Text=RSA' },
-  ];
+  const [teams, setTeams] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchTeams = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const res = await fetch('http://localhost:3001/api/v1/team');
+        const data = await res.json();
+        if (res.ok && data.data) {
+          setTeams(data.data);
+        } else {
+          setError(data.message || 'Failed to fetch teams');
+        }
+      } catch (err) {
+        setError('Error connecting to backend');
+      }
+      setLoading(false);
+    };
+    fetchTeams();
+  }, []);
 
   return (
     <CricketPageLayout title="Cricket Teams">
@@ -30,11 +44,17 @@ const CricketTeamsPage = () => {
           Add New Team
         </button>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 lg:gap-8">
-        {teams.map(team => (
-          <TeamListItem key={team.id} team={team} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="text-center text-slate-400 py-12">Loading teams...</div>
+      ) : error ? (
+        <div className="text-center text-red-400 py-12">{error}</div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 lg:gap-8">
+          {teams.map(team => (
+            <TeamListItem key={team._id} team={team} />
+          ))}
+        </div>
+      )}
     </CricketPageLayout>
   );
 };

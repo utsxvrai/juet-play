@@ -1,6 +1,23 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AddTeamPageLayout from '../components/common/AddTeamPageLayout';
+
+// Sport-specific role/position options
+const roleOptions = {
+  cricket: [
+    'Batsman', 'Bowler', 'All-Rounder', 'Wicket-Keeper', 'Captain'
+  ],
+  football: [
+    'Goalkeeper', 'Defender', 'Midfielder', 'Forward', 'Captain'
+  ],
+  volleyball: [
+    'Setter', 'Outside Hitter', 'Opposite Hitter', 'Middle Blocker', 'Libero', 'Captain'
+  ],
+  basketball: [
+    'Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center', 'Captain'
+  ]
+};
 
 const sportsConfig = {
   cricket: { label: 'Cricket', min: 11, max: 15 },
@@ -34,10 +51,14 @@ const AddTeamPage = () => {
   const [coach, setCoach] = useState('');
   const [arena, setArena] = useState('');
   const [players, setPlayers] = useState([]);
+  // Management login modal state
+  const [showModal, setShowModal] = useState(true);
+  const [login, setLogin] = useState({ email: '', password: '' });
+  const [loginError, setLoginError] = useState('');
 
   const handleSportChange = (e) => {
     setSelectedSport(e.target.value);
-    setPlayers(Array(sportsConfig[e.target.value].min).fill({ name: '', position: '', jerseyNumber: '', height: '', weight: '' }));
+    setPlayers(Array(sportsConfig[e.target.value].min).fill({ name: '', role: '', jerseyNumber: '' }));
   };
 
   const handleTeamNameChange = (e) => {
@@ -54,7 +75,7 @@ const AddTeamPage = () => {
 
   const addPlayerRow = () => {
     if (players.length < sportsConfig[selectedSport].max) {
-      setPlayers([...players, { name: '', position: '', jerseyNumber: '', height: '', weight: '' }]);
+      setPlayers([...players, { name: '', role: '', jerseyNumber: '' }]);
     }
   };
 
@@ -66,14 +87,93 @@ const AddTeamPage = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(`Team ${teamName} (${teamId}) created! (Demo only)`);
-    navigate('/');
+    // Prepare payload for backend
+    const payload = {
+      name: teamName,
+      sport: selectedSport.toUpperCase(),
+      manager: coach,
+      logo: '',
+      players: players.map(p => ({
+        name: p.name,
+        jerseyNumber: Number(p.jerseyNumber),
+        role: p.role,
+        sport: selectedSport.toUpperCase()
+      })),
+      captain: 0 // Default: first player as captain
+    };
+    try {
+      const res = await fetch('http://localhost:3001/api/v1/team/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert('Team created successfully!');
+        navigate('/');
+
+
+// Sport-specific role/position options
+const roleOptions = {
+  cricket: [
+    'Batsman', 'Bowler', 'All-Rounder', 'Wicket-Keeper', 'Captain'
+  ],
+  football: [
+    'Goalkeeper', 'Defender', 'Midfielder', 'Forward', 'Captain'
+  ],
+  volleyball: [
+    'Setter', 'Outside Hitter', 'Opposite Hitter', 'Middle Blocker', 'Libero', 'Captain'
+  ],
+  basketball: [
+    'Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center', 'Captain'
+  ]
+};
+      } else {
+        alert(data.message || 'Failed to create team');
+      }
+    } catch (err) {
+      alert('Error connecting to backend');
+    }
   };
 
+  // Management Login Modal
   return (
     <AddTeamPageLayout title="Add a New Team">
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-xs relative">
+            <h2 className="text-lg font-bold text-blue-400 mb-4">Management Login</h2>
+            <form onSubmit={e => {
+              e.preventDefault();
+              if (login.email === '221b425' && login.password === '1234') {
+                setShowModal(false);
+                setLoginError('');
+              } else {
+                setLoginError('Invalid email or password.');
+              }
+            }} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm text-blue-300 mb-1">Email/ID</label>
+                <input type="text" name="email" id="email" value={login.email} onChange={e => setLogin({ ...login, email: e.target.value })} required
+                  className="w-full bg-slate-700 border-slate-600 text-white rounded-md py-2 px-3" />
+              </div>
+              <div>
+                <label htmlFor="password" className="block text-sm text-blue-300 mb-1">Password</label>
+                <input type="password" name="password" id="password" value={login.password} onChange={e => setLogin({ ...login, password: e.target.value })} required
+                  className="w-full bg-slate-700 border-slate-600 text-white rounded-md py-2 px-3" />
+              </div>
+              {loginError && <p className="text-red-400 text-xs">{loginError}</p>}
+              <div className="flex justify-end space-x-2 mt-4">
+                <button type="button" onClick={() => { setShowModal(false); setLoginError(''); }}
+                  className="px-4 py-1 border border-slate-600 text-slate-300 rounded-md hover:bg-slate-700">Cancel</button>
+                <button type="submit" className="px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md">Login</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       <div className="mb-10">
         <h2 className="text-3xl font-semibold text-blue-400 mb-8 text-center">Select a Sport</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6 justify-center max-w-2xl mx-auto">
@@ -117,10 +217,19 @@ const AddTeamPage = () => {
               {players.map((player, idx) => (
                 <div key={idx} className="grid grid-cols-1 md:grid-cols-5 gap-2 items-center bg-slate-700/30 rounded-md p-2">
                   <input type="text" name="name" placeholder="Name" value={player.name} onChange={e => handlePlayerChange(idx, e)} required className="w-full bg-slate-600/50 border-slate-500 text-white rounded-md py-1 px-2" />
-                  <input type="text" name="position" placeholder="Position" value={player.position} onChange={e => handlePlayerChange(idx, e)} className="w-full bg-slate-600/50 border-slate-500 text-white rounded-md py-1 px-2" />
-                  <input type="number" name="jerseyNumber" placeholder="Jersey No." value={player.jerseyNumber} onChange={e => handlePlayerChange(idx, e)} className="w-full bg-slate-600/50 border-slate-500 text-white rounded-md py-1 px-2" />
-                  <input type="text" name="height" placeholder="Height" value={player.height} onChange={e => handlePlayerChange(idx, e)} className="w-full bg-slate-600/50 border-slate-500 text-white rounded-md py-1 px-2" />
-                  <input type="text" name="weight" placeholder="Weight" value={player.weight} onChange={e => handlePlayerChange(idx, e)} className="w-full bg-slate-600/50 border-slate-500 text-white rounded-md py-1 px-2" />
+                  <select
+                    name="role"
+                    value={player.role}
+                    onChange={e => handlePlayerChange(idx, e)}
+                    required
+                    className="w-full bg-slate-600/50 border-slate-500 text-white rounded-md py-1 px-2"
+                  >
+                    <option value="">Select Role/Position</option>
+                    {selectedSport && roleOptions[selectedSport].map((role, i) => (
+                      <option key={i} value={role}>{role}</option>
+                    ))}
+                  </select>
+                  <input type="number" name="jerseyNumber" placeholder="Jersey No." value={player.jerseyNumber} onChange={e => handlePlayerChange(idx, e)} required className="w-full bg-slate-600/50 border-slate-500 text-white rounded-md py-1 px-2" />
                   {players.length > sportsConfig[selectedSport].min && (
                     <button type="button" onClick={() => removePlayerRow(idx)} className="text-red-400 hover:text-red-300 font-medium py-1 px-2 rounded-md hover:bg-red-500/20 transition-colors text-xs mt-1">Remove</button>
                   )}

@@ -1,3 +1,14 @@
+async function update(id, data) {
+    try {
+        const updated = await PlayerRepository.update(id, data);
+        if (!updated) {
+            throw new AppError('Player not found', StatusCodes.NOT_FOUND);
+        }
+        return updated;
+    } catch (error) {
+        throw new AppError('Error updating player', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+}
 const { StatusCodes} = require('http-status-codes');
 const { PlayerRepository } = require('../repositories');
 const AppError = require('../utils/errors/app-error');
@@ -67,18 +78,6 @@ async function getPlayerStats(id) {
     }
 }
 
-async function updatePlayer(id, data) {
-    try {
-        const updatedPlayer = await PlayerRepository.update(id, data);
-        if (!updatedPlayer) {
-            throw new AppError('Player not found', StatusCodes.NOT_FOUND);
-        }
-        return updatedPlayer;
-    } catch (error) {
-        throw new AppError('Error updating player', StatusCodes.INTERNAL_SERVER_ERROR);
-    }
-}
-
 module.exports = {
     create,
     getAllPlayers,
@@ -86,5 +85,6 @@ module.exports = {
     searchPlayersByName,
     getPlayersBySport,
     getPlayerStats,
-    updatePlayer
+    update
 };
+

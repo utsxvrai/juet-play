@@ -6,6 +6,10 @@ import HomePage from './pages/HomePage';
 // Cricket Imports
 import CricketMatchesPage from './pages/cricket/CricketMatchesPage';
 import CricketTeamsPage from './pages/cricket/CricketTeamsPage';
+import CricketTournamentsPage from './pages/cricket/CricketTournamentsPage';
+import FootballTournamentsPage from './pages/football/FootballTournamentsPage';
+import VolleyballTournamentsPage from './pages/volleyball/VolleyballTournamentsPage';
+import BasketballTournamentsPage from './pages/basketball/BasketballTournamentsPage';
 
 // Football Imports
 import FootballMatchesPage from './pages/football/FootballMatchesPage';
@@ -42,7 +46,11 @@ const App = () => {
       <Route path="/cricket" element={<CricketMatchesPage />} />
       <Route path="/cricket/matches" element={<CricketMatchesPage />} />
       <Route path="/cricket/teams" element={<CricketTeamsPage />} />
-      {/* TODO: Add /cricket/match/:matchId and /cricket/team/:teamId/squad routes */}
+      <Route path="/cricket/tournaments" element={<CricketTournamentsPage />} />
+      <Route path="/football/tournaments" element={<FootballTournamentsPage />} />
+      <Route path="/volleyball/tournaments" element={<VolleyballTournamentsPage />} />
+      <Route path="/basketball/tournaments" element={<BasketballTournamentsPage />} />
+      <Route path="/cricket/team/:teamId/squad" element={React.createElement(require('./pages/cricket/CricketTeamSquadPage').default)} />
 
       {/* Football Routes */}
       <Route path="/football" element={<FootballMatchesPage />} />
