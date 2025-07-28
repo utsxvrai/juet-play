@@ -8,7 +8,7 @@ const HomePage = () => {
   const [login, setLogin] = useState({ email: '', password: '' });
   const [loginError, setLoginError] = useState('');
   const sports = [
-    { name: 'Cricket', emoji: '🏏', path: '/cricket' },
+    { name: 'Badminton', emoji: '🏸', path: '/badminton' },
     { name: 'Football', emoji: '⚽', path: '/football' },
     { name: 'Volleyball', emoji: '🏐', path: '/volleyball' },
     { name: 'Basketball', emoji: '🏀', path: '/basketball' },

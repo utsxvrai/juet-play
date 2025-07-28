@@ -1,0 +1,81 @@
+const { MatchService } = require('../services');
+const { SuccessResponse, ErrorResponse } = require('../utils/common');
+const { StatusCodes } = require('http-status-codes');
+
+
+async function createMatch(req, res){
+    try {
+        const match = await MatchService.createMatch({ 
+            hostId: req.body.hostId,
+            format: req.body.format,
+            playerOneIds: req.body.playerOneIds,
+            playerTwoIds: req.body.playerTwoIds,
+            scheduledTime: req.body.scheduledTime,
+            status: req.body.status,
+        });
+        SuccessResponse.data = match;
+        return res.status(StatusCodes.CREATED).json(SuccessResponse);
+    }
+    catch(error){
+        console.log(error);
+        ErrorResponse.message = error.message;
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(ErrorResponse);
+    }
+}
+
+async function getMatchById(req, res){
+    try{
+        const match = await MatchService.getMatchById(req.params.id);
+        SuccessResponse.data = match;
+        return res.status(StatusCodes.OK).json(SuccessResponse);
+    }
+    catch(error){
+        ErrorResponse.message = error.message;
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(ErrorResponse);
+    }
+}
+
+async function getAllMatches(req, res){
+    try{
+        const matches = await MatchService.getAllMatches();
+        SuccessResponse.data = matches;
+        return res.status(StatusCodes.OK).json(SuccessResponse);
+    }
+    catch(error){
+        ErrorResponse.message = error.message;
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(ErrorResponse);
+    }
+}
+
+async function deleteMatch(req, res){
+    try{
+        const match = await MatchService.deleteMatch(req.params.id);
+        SuccessResponse.data = match;
+        return res.status(StatusCodes.OK).json(SuccessResponse);
+    }
+    catch(error){
+        ErrorResponse.message = error.message;
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(ErrorResponse);
+    }
+}
+
+async function updateMatch(req, res){
+    try{
+        const match = await MatchService.updateMatch(req.params.id, req.body);
+        SuccessResponse.data = match;
+        return res.status(StatusCodes.OK).json(SuccessResponse);
+    }
+    catch(error){
+        ErrorResponse.message = error.message;
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(ErrorResponse);
+    }
+}
+
+module.exports = {
+    createMatch,
+    getMatchById,
+    getAllMatches,
+    deleteMatch,
+    updateMatch,
+}
+

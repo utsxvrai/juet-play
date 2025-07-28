@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const sports = [
-  { name: 'Cricket', path: '/host/cricket', emoji: '🏏', accent: 'emerald' },
+  { name: 'Badminton', path: '/host/badminton', emoji: '🏸', accent: 'orange' },
   { name: 'Football', path: '/host/football', emoji: '⚽', accent: 'teal' },
   { name: 'Volleyball', path: '/host/volleyball', emoji: '🏐', accent: 'indigo' },
   { name: 'Basketball', path: '/host/basketball', emoji: '🏀', accent: 'orange' },
