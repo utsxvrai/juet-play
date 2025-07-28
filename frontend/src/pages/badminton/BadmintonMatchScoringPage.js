@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import BadmintonPageLayout from '../../components/badminton/BadmintonPageLayout';
+import { io } from 'socket.io-client';
+
+const socket = io('http://localhost:3002');
 
 const BadmintonMatchScoringPage = () => {
   const { matchid } = useParams();
@@ -32,50 +35,67 @@ const BadmintonMatchScoringPage = () => {
       }
     };
     fetchMatch();
+
+    // Socket.io: join match room and listen for updates
+    socket.emit('joinMatch', matchid);
+    socket.on('scoreUpdate', (updatedMatch) => {
+      setMatch(updatedMatch);
+    });
+    return () => {
+      socket.emit('leaveMatch', matchid);
+      socket.off('scoreUpdate');
+    };
   }, [matchid]);
+
+  // Refetch player names whenever match changes
+  useEffect(() => {
+    const fetchNames = async (ids) => {
+      if (!ids || ids.length === 0) return [];
+      const names = await Promise.all(
+        ids.map(async (id) => {
+          const res = await fetch(`http://localhost:3002/api/v1/player/${id}`);
+          if (res.ok) {
+            const data = await res.json();
+            return data.data?.name || 'Unknown';
+          }
+          return 'Unknown';
+        })
+      );
+      return names;
+    };
+    if (match) {
+      (async () => {
+        const oneNames = await fetchNames(match.playerOneIds);
+        const twoNames = await fetchNames(match.playerTwoIds);
+        setPlayerOneNames(oneNames);
+        setPlayerTwoNames(twoNames);
+      })();
+    }
+  }, [match?.playerOneIds, match?.playerTwoIds]);
 
   useEffect(() => {
     if (match) {
-      fetchPlayerNames();
       initializeScores();
     }
     // eslint-disable-next-line
   }, [match]);
 
-  const fetchPlayerNames = async () => {
-    if (!match) return;
-    try {
-      const fetchNames = async (ids) => {
-        if (!ids || ids.length === 0) return [];
-        const names = await Promise.all(
-          ids.map(async (id) => {
-            const res = await fetch(`http://localhost:3002/api/v1/player/${id}`);
-            if (res.ok) {
-              const data = await res.json();
-              return data.data?.name || 'Unknown';
-            }
-            return 'Unknown';
-          })
-        );
-        return names;
-      };
-      const oneNames = await fetchNames(match.playerOneIds);
-      const twoNames = await fetchNames(match.playerTwoIds);
-      setPlayerOneNames(oneNames);
-      setPlayerTwoNames(twoNames);
-    } catch (error) {
-      setPlayerOneNames(['Unknown']);
-      setPlayerTwoNames(['Unknown']);
-    }
-  };
-
   const initializeScores = () => {
     if (match?.sets && match.sets.length > 0) {
       const lastSet = match.sets[match.sets.length - 1];
-      setCurrentSet(lastSet.setNumber + 1);
-      setPlayerOneScore(0);
-      setPlayerTwoScore(0);
-      setCurrentServer(lastSet.winnerId === match.playerOneIds?.[0] ? 'one' : 'two');
+      // If last set is completed (has winnerId), start a new set
+      if (lastSet.winnerId) {
+        setCurrentSet(lastSet.setNumber + 1);
+        setPlayerOneScore(0);
+        setPlayerTwoScore(0);
+        setCurrentServer(lastSet.winnerId === match.playerOneIds?.[0] ? 'one' : 'two');
+      } else {
+        // Continue the last set in progress
+        setCurrentSet(lastSet.setNumber);
+        setPlayerOneScore(lastSet.playerOneScore || 0);
+        setPlayerTwoScore(lastSet.playerTwoScore || 0);
+        setCurrentServer(currentServer => currentServer); // keep as is
+      }
     } else {
       setCurrentSet(1);
       setPlayerOneScore(0);
@@ -88,21 +108,55 @@ const BadmintonMatchScoringPage = () => {
 
   const joinNames = (names) => names.length > 1 ? names.join(' & ') : names[0] || '';
 
-  const handleScoreUpdate = (player, action) => {
+  const handleScoreUpdate = async (player, action) => {
+    let newPlayerOneScore = playerOneScore;
+    let newPlayerTwoScore = playerTwoScore;
+    let newServer = currentServer;
     if (player === 'one') {
       if (action === 'increment') {
-        setPlayerOneScore(prev => Math.min(prev + 1, 30));
-        setCurrentServer('one');
+        newPlayerOneScore = Math.min(playerOneScore + 1, 30);
+        newServer = 'one';
       } else if (action === 'decrement') {
-        setPlayerOneScore(prev => Math.max(prev - 1, 0));
+        newPlayerOneScore = Math.max(playerOneScore - 1, 0);
       }
     } else {
       if (action === 'increment') {
-        setPlayerTwoScore(prev => Math.min(prev + 1, 30));
-        setCurrentServer('two');
+        newPlayerTwoScore = Math.min(playerTwoScore + 1, 30);
+        newServer = 'two';
       } else if (action === 'decrement') {
-        setPlayerTwoScore(prev => Math.max(prev - 1, 0));
+        newPlayerTwoScore = Math.max(playerTwoScore - 1, 0);
       }
+    }
+    setPlayerOneScore(newPlayerOneScore);
+    setPlayerTwoScore(newPlayerTwoScore);
+    setCurrentServer(newServer);
+    // Save the current set progress to the backend for real-time DB update
+    if (match) {
+      const sets = [...(match.sets || [])];
+      // Always update the last set in progress (or create if none)
+      let setIdx = sets.length > 0 ? sets.length - 1 : -1;
+      if (setIdx === -1 || sets[setIdx].winnerId) {
+        // No set in progress, create new
+        sets.push({
+          setNumber: sets.length + 1,
+          playerOneScore: newPlayerOneScore,
+          playerTwoScore: newPlayerTwoScore,
+          winnerId: null
+        });
+      } else {
+        // Update the set in progress
+        sets[setIdx] = {
+          ...sets[setIdx],
+          playerOneScore: newPlayerOneScore,
+          playerTwoScore: newPlayerTwoScore
+        };
+      }
+      // Save to backend
+      fetch(`http://localhost:3002/api/v1/match/${match._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sets, status: 'ongoing' })
+      });
     }
   };
 
@@ -147,7 +201,14 @@ const BadmintonMatchScoringPage = () => {
         playerTwoScore: playerTwoScore,
         winnerId: getSetWinner()
       };
-      const updatedSets = [...(match.sets || []), newSet];
+      const updatedSets = [...(match.sets || [])];
+      if (updatedSets.length > 0 && !updatedSets[updatedSets.length - 1].winnerId) {
+        // Replace the in-progress set with the completed one
+        updatedSets[updatedSets.length - 1] = newSet;
+      } else {
+        // No incomplete set, just add this
+        updatedSets.push(newSet);
+      }
       const response = await fetch(`http://localhost:3002/api/v1/match/${match._id}`, {
         method: 'PUT',
         headers: {

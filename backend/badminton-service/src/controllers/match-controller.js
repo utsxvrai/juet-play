@@ -62,7 +62,14 @@ async function deleteMatch(req, res){
 async function updateMatch(req, res){
     try{
         const match = await MatchService.updateMatch(req.params.id, req.body);
-        SuccessResponse.data = match;
+        // Fetch the fully populated match (with player details)
+        const populatedMatch = await MatchService.getMatchById(req.params.id);
+        SuccessResponse.data = populatedMatch;
+        // Emit socket event for live updates
+        const io = req.app.get('io');
+        if (io) {
+            io.to(req.params.id).emit('scoreUpdate', populatedMatch);
+        }
         return res.status(StatusCodes.OK).json(SuccessResponse);
     }
     catch(error){

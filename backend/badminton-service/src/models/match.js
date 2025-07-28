@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { validate } = require('./player');
 
 function arrayLimit(val) {
   return val.length === 1 || val.length === 2;
@@ -46,6 +47,7 @@ const matchSchema = new mongoose.Schema({
     setNumber: Number,
     playerOneScore: Number,
     playerTwoScore: Number,
+    
     winnerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Player',

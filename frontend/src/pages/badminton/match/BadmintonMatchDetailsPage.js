@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import BadmintonPageLayout from '../../../components/badminton/BadmintonPageLayout';
+import { io } from 'socket.io-client';
+
+const socket = io('http://localhost:3002');
 
 const BadmintonMatchDetailsPage = () => {
   const { matchId } = useParams();
@@ -49,6 +52,37 @@ const BadmintonMatchDetailsPage = () => {
     };
 
     fetchMatchDetails();
+
+    // Socket.io: join match room and listen for updates
+    socket.emit('joinMatch', matchId);
+    socket.on('scoreUpdate', (updatedMatch) => {
+      setMatchDetails(updatedMatch);
+      // Refetch player details for both teams
+      const fetchPlayers = async (ids) => {
+        if (!ids || ids.length === 0) return [];
+        const players = await Promise.all(
+          ids.map(async (id) => {
+            const res = await fetch(`http://localhost:3002/api/v1/player/${id}`);
+            if (res.ok) {
+              const data = await res.json();
+              return data.data || data;
+            }
+            return { name: 'Unknown', rank: 'N/A' };
+          })
+        );
+        return players;
+      };
+      (async () => {
+        const onePlayers = await fetchPlayers(updatedMatch.playerOneIds);
+        const twoPlayers = await fetchPlayers(updatedMatch.playerTwoIds);
+        setPlayerOne(onePlayers);
+        setPlayerTwo(twoPlayers);
+      })();
+    });
+    return () => {
+      socket.emit('leaveMatch', matchId);
+      socket.off('scoreUpdate');
+    };
   }, [matchId]);
 
   if (loading) {
