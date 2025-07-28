@@ -45,9 +45,14 @@ async function getPlayerById(req, res) {
  */
 
 async function getAllPlayers(req, res) {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 6;
     try {
-        const players = await PlayerService.getAllPlayers();
-        SuccessResponse.data = players;
+        const data = await PlayerService.getAllPlayers({ page, limit });
+        SuccessResponse.data = data.results;
+        SuccessResponse.total = data.total;
+        SuccessResponse.page = data.page;
+        SuccessResponse.pages = data.pages;
         return res.status(StatusCodes.OK).json(SuccessResponse);
     } catch (error) {
         ErrorResponse.message = error.message;

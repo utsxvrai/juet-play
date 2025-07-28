@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { BADMINTON_SERVICE_URL } from '../../utils/api';
 
 const BadmintonMatchCard = ({ match }) => {
   const [playerOneNames, setPlayerOneNames] = useState([]);
@@ -14,7 +15,7 @@ const BadmintonMatchCard = ({ match }) => {
           if (!ids || ids.length === 0) return [];
           const names = await Promise.all(
             ids.map(async (id) => {
-              const res = await fetch(`https://juet-play.onrender.com/api/v1/player/${id}`);
+              const res = await fetch(`${BADMINTON_SERVICE_URL}/api/v1/player/${id}`);
               if (res.ok) {
                 const data = await res.json();
                 return data.data?.name || 'Unknown';

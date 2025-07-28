@@ -2,30 +2,50 @@ import React, { useEffect, useState } from 'react';
 import BadmintonPageLayout from '../../components/badminton/BadmintonPageLayout';
 import BadmintonMatchCard from '../../components/badminton/BadmintonMatchCard';
 import { Link } from 'react-router-dom';
-
 import { fetchMatchesBySport } from '../../utils/api';
+// import {BADMINTON_SERVICE_URL} from '../../utils/api';
+// console.log(`BADMINTON_SERVICE_URL1: ${BADMINTON_SERVICE_URL}`); 
 
 const BadmintonMatchesPage = () => {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit] = useState(6); // fixed 6 per page, can make dynamic if you want
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    fetchMatchesBySport('badminton')
+    setLoading(true);
+    fetchMatchesBySport('badminton', { page, limit })
       .then(data => {
-        console.log('API Response:', data);
-        // Ensure data is an array
-        const matchesArray = Array.isArray(data) ? data : (data?.data || []);
+        // Ensure matchesArray is always an array
+        const matchesArray = Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data)
+            ? data
+            : [];
         setMatches(matchesArray);
+        setTotalPages(data.pages || 1);
         setLoading(false);
       })
       .catch(err => {
         console.error('Error fetching matches:', err);
         setError('Failed to load matches');
-        setMatches([]);
+        setMatches([]); // always an array
         setLoading(false);
       });
-  }, []);
+  }, [page, limit]);
+   // refetch when page or limit changes
+
+  const handlePrev = () => {
+    if (page > 1) setPage(page - 1);
+  };
+
+  const handleNext = () => {
+    if (page < totalPages) setPage(page + 1);
+  };
 
   if (error) {
     return (
@@ -47,19 +67,39 @@ const BadmintonMatchesPage = () => {
           </Link>
         </div>
       </div>
+      
       {loading ? (
         <div className="text-slate-400">Loading matches...</div>
       ) : matches.length === 0 ? (
         <div className="text-slate-400 text-center">No matches found</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
-          {matches.map(match => (
-            <BadmintonMatchCard key={match._id} match={match} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
+            {matches.map(match => (
+              <BadmintonMatchCard key={match._id} match={match} />
+            ))}
+          </div>
+          <div className="flex justify-center space-x-4 mt-6">
+            <button 
+              onClick={handlePrev} 
+              disabled={page === 1}
+              className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+            >
+              Prev
+            </button>
+            <span className="flex items-center">Page {page} of {totalPages}</span>
+            <button 
+              onClick={handleNext} 
+              disabled={page === totalPages}
+              className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </>
       )}
     </BadmintonPageLayout>
   );
 };
 
-export default BadmintonMatchesPage; 
+export default BadmintonMatchesPage;

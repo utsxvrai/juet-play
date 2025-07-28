@@ -35,13 +35,17 @@ async function getMatchById(req, res){
     }
 }
 
-async function getAllMatches(req, res){
-    try{
-        const matches = await MatchService.getAllMatches();
-        SuccessResponse.data = matches;
+async function getAllMatches(req, res) {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 6;
+    try {
+        const data = await MatchService.getAllMatches({ page, limit });
+        SuccessResponse.data = data.results;
+        SuccessResponse.total = data.total;
+        SuccessResponse.page = data.page;
+        SuccessResponse.pages = data.pages;
         return res.status(StatusCodes.OK).json(SuccessResponse);
-    }
-    catch(error){
+    } catch (error) {
         ErrorResponse.message = error.message;
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(ErrorResponse);
     }

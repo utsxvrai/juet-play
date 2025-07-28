@@ -27,9 +27,9 @@ async function getPlayerById(id) {
     }
 }
 
-async function getAllPlayers() {
+async function getAllPlayers({ page, limit }) {
     try {
-        const players = await playerRepository.getAll();
+        const players = await playerRepository.getAll({}, { page, limit });
         return players;
     } catch (error) {
         throw new AppError('Error fetching players', StatusCodes.INTERNAL_SERVER_ERROR);

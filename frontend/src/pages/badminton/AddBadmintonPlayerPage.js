@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import BadmintonPageLayout from '../../components/badminton/BadmintonPageLayout';
 import { useNavigate } from 'react-router-dom';
+import { BADMINTON_SERVICE_URL } from '../../utils/api';
 
 const AddBadmintonPlayerPage = () => {
   const [form, setForm] = useState({ name: '', age: '', gender: '', country: '' });
@@ -41,7 +42,7 @@ const AddBadmintonPlayerPage = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('https://juet-play.onrender.com/api/v1/player/create', {
+      const res = await fetch(`${BADMINTON_SERVICE_URL}/api/v1/player/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),

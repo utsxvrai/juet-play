@@ -33,9 +33,9 @@ async function getMatchById(id){
     }
 }
 
-async function getAllMatches(){
+async function getAllMatches({ page, limit }){
     try {
-        const matches = await matchRepository.getAll();
+        const matches =  await matchRepository.getAll({}, { page, limit });
         return matches;
     } catch (error) {
         throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);

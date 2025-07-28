@@ -12,7 +12,7 @@ const apiRoutes = require('./routes');
 // CORS middleware
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://juet-play.vercel.app'
+  // 'https://juet-play.vercel.app'
 ];
 app.use(cors({
   origin: (origin, callback) => {

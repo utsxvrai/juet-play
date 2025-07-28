@@ -8,14 +8,21 @@ const BadmintonPlayersPage = () => {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit] = useState(6);  // Players per page
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    fetchPlayers('badminton')
+    setLoading(true);
+    fetchPlayers('badminton', { page, limit })
       .then(data => {
-        console.log('Players API Response:', data);
-        const playersArray = Array.isArray(data) ? data : (data?.data || []);
-        setPlayers(playersArray);
+        // data is your full API response: { data, total, page, pages }
+        setPlayers(data.data);
+        setTotalPages(data.pages || 1);
+        // console.log(data.pages)
         setLoading(false);
+        // console.log('Fetched players data:', data); // For debugging
       })
       .catch(err => {
         console.error('Error fetching players:', err);
@@ -23,7 +30,15 @@ const BadmintonPlayersPage = () => {
         setPlayers([]);
         setLoading(false);
       });
-  }, []);
+  }, [page, limit]);
+
+  const handlePrev = () => {
+    if (page > 1) setPage(page - 1);
+  };
+
+  const handleNext = () => {
+    if (page < totalPages) setPage(page + 1);
+  };
 
   if (error) {
     return (
@@ -45,14 +60,25 @@ const BadmintonPlayersPage = () => {
       ) : players.length === 0 ? (
         <div className="text-slate-400 text-center">No players found</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
-          {players.map(player => (
-            <BadmintonPlayerCard key={player._id} player={player} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
+            {players.map(player => (
+              <BadmintonPlayerCard key={player._id} player={player} />
+            ))}
+          </div>
+          <div className="flex justify-center space-x-4 mt-6">
+            <button onClick={handlePrev} disabled={page === 1} className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50">
+              Prev
+            </button>
+            <span className="flex items-center">Page {page} of {totalPages}</span>
+            <button onClick={handleNext} disabled={page === totalPages} className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50">
+              Next
+            </button>
+          </div>
+        </>
       )}
     </BadmintonPageLayout>
   );
 };
 
-export default BadmintonPlayersPage; 
+export default BadmintonPlayersPage;
