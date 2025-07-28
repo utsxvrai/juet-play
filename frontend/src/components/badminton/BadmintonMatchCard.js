@@ -14,7 +14,7 @@ const BadmintonMatchCard = ({ match }) => {
           if (!ids || ids.length === 0) return [];
           const names = await Promise.all(
             ids.map(async (id) => {
-              const res = await fetch(`http://localhost:3002/api/v1/player/${id}`);
+              const res = await fetch(`https://juet-play.onrender.com/api/v1/player/${id}`);
               if (res.ok) {
                 const data = await res.json();
                 return data.data?.name || 'Unknown';

@@ -36,7 +36,7 @@ const HostBadmintonPage = () => {
 
   const fetchPlayers = async () => {
     try {
-      const response = await fetch('http://localhost:3002/api/v1/player');
+      const response = await fetch('https://juet-play.onrender.com/api/v1/player');
       if (response.ok) {
         const data = await response.json();
         setPlayers(data.data || data || []);
@@ -115,7 +115,7 @@ const HostBadmintonPage = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:3002/api/v1/match/create', {
+      const response = await fetch('https://juet-play.onrender.com/api/v1/match/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

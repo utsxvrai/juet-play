@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import BadmintonPageLayout from '../../components/badminton/BadmintonPageLayout';
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:3002');
+const socket = io('https://juet-play.onrender.com');
 
 const BadmintonMatchScoringPage = () => {
   const { matchid } = useParams();
@@ -25,7 +25,7 @@ const BadmintonMatchScoringPage = () => {
   useEffect(() => {
     const fetchMatch = async () => {
       try {
-        const response = await fetch(`http://localhost:3002/api/v1/match/${matchid}`);
+        const response = await fetch(`https://juet-play.onrender.com/api/v1/match/${matchid}`);
         if (response.ok) {
           const data = await response.json();
           setMatch(data.data || data);
@@ -53,7 +53,7 @@ const BadmintonMatchScoringPage = () => {
       if (!ids || ids.length === 0) return [];
       const names = await Promise.all(
         ids.map(async (id) => {
-          const res = await fetch(`http://localhost:3002/api/v1/player/${id}`);
+          const res = await fetch(`https://juet-play.onrender.com/api/v1/player/${id}`);
           if (res.ok) {
             const data = await res.json();
             return data.data?.name || 'Unknown';
@@ -152,7 +152,7 @@ const BadmintonMatchScoringPage = () => {
         };
       }
       // Save to backend
-      fetch(`http://localhost:3002/api/v1/match/${match._id}`, {
+      fetch(`https://juet-play.onrender.com/api/v1/match/${match._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sets, status: 'ongoing' })
@@ -209,7 +209,7 @@ const BadmintonMatchScoringPage = () => {
         // No incomplete set, just add this
         updatedSets.push(newSet);
       }
-      const response = await fetch(`http://localhost:3002/api/v1/match/${match._id}`, {
+      const response = await fetch(`https://juet-play.onrender.com/api/v1/match/${match._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -225,7 +225,7 @@ const BadmintonMatchScoringPage = () => {
         if (playerOneSetsWon >= 2 || playerTwoSetsWon >= 2) {
           const matchWinnerId = playerOneSetsWon >= 2 ? match.playerOneIds?.[0] : match.playerTwoIds?.[0];
           setMatchWinner(playerOneSetsWon >= 2 ? 'one' : 'two');
-          await fetch(`http://localhost:3002/api/v1/match/${match._id}`, {
+          await fetch(`https://juet-play.onrender.com/api/v1/match/${match._id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -245,7 +245,7 @@ const BadmintonMatchScoringPage = () => {
           setSetWinner(null);
         }
         // Refresh match
-        const updatedMatch = await fetch(`http://localhost:3002/api/v1/match/${match._id}`);
+        const updatedMatch = await fetch(`https://juet-play.onrender.com/api/v1/match/${match._id}`);
         if (updatedMatch.ok) {
           const data = await updatedMatch.json();
           setMatch(data.data || data);

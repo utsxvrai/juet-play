@@ -41,7 +41,7 @@ const AddBadmintonPlayerPage = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('http://localhost:3002/api/v1/player/create', {
+      const res = await fetch('https://juet-play.onrender.com/api/v1/player/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
