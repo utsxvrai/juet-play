@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import BadmintonPageLayout from '../../../components/badminton/BadmintonPageLayout';
 import { io } from 'socket.io-client';
+import { BADMINTON_SERVICE_URL } from '../../../utils/api';
 
 
-const socket = io('https://juet-play.onrender.com');
+const socket = io(BADMINTON_SERVICE_URL);
 
 const BadmintonMatchDetailsPage = () => {
   const { matchId } = useParams();
@@ -19,7 +20,7 @@ const BadmintonMatchDetailsPage = () => {
     const fetchMatchDetails = async () => {
       try {
         // Fetch match details
-        const matchRes = await fetch(`https://juet-play.onrender.com/api/v1/match/${matchId}`);
+        const matchRes = await fetch(`${BADMINTON_SERVICE_URL}/api/v1/match/${matchId}`);
         if (matchRes.ok) {
           const matchData = await matchRes.json();
           setMatchDetails(matchData.data || matchData);
@@ -29,7 +30,7 @@ const BadmintonMatchDetailsPage = () => {
             if (!ids || ids.length === 0) return [];
             const players = await Promise.all(
               ids.map(async (id) => {
-                const res = await fetch(`https://juet-play.onrender.com/api/v1/player/${id}`);
+                const res = await fetch(`${BADMINTON_SERVICE_URL}/api/v1/player/${id}`);
                 if (res.ok) {
                   const data = await res.json();
                   return data.data || data;
@@ -63,7 +64,7 @@ const BadmintonMatchDetailsPage = () => {
         if (!ids || ids.length === 0) return [];
         const players = await Promise.all(
           ids.map(async (id) => {
-            const res = await fetch(`https://juet-play.onrender.com/api/v1/player/${id}`);
+            const res = await fetch(`${BADMINTON_SERVICE_URL}/api/v1/player/${id}`);
             if (res.ok) {
               const data = await res.json();
               return data.data || data;

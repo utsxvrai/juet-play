@@ -1,13 +1,13 @@
 const { MatchRepository } = require('../repositories');
 const { StatusCodes } = require('http-status-codes');
 const AppError = require('../utils/errors/app-error');
-
+const redis = require('../config/redis-config');
 
 const matchRepository = new MatchRepository();
 
 async function createMatch(data){
     try {
-        console.log('Creating match with data:', data);
+        // console.log('Creating match with data:', data);
         const match = await matchRepository.create(data);
         return match;
     } catch (error) {
@@ -25,8 +25,16 @@ async function createMatch(data){
 }
 
 async function getMatchById(id){
+    const cacheKey = `match:${id}`;
     try {
+        const cachedMatch = await redis.get(cacheKey);
+        if(cachedMatch){
+            console.log('Match found in cache');
+            return JSON.parse(cachedMatch);
+        }
+        // console.log('Match not found in cache, fetching from database');
         const match = await matchRepository.get(id);
+        await redis.set(cacheKey, JSON.stringify(match), 'EX', 3600);
         return match;
     } catch (error) {
         throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
@@ -34,8 +42,17 @@ async function getMatchById(id){
 }
 
 async function getAllMatches({ page, limit }){
+    const cacheKey = `matches:page:${page}:limit:${limit}`;
     try {
+        const cachedMatches = await redis.get(cacheKey);
+        if(cachedMatches){
+            console.log('Matches found in cache');
+            return JSON.parse(cachedMatches);
+        }
+        // console.log('Matches not found in cache, fetching from database');
         const matches =  await matchRepository.getAll({}, { page, limit });
+        await redis.set(cacheKey, JSON.stringify(matches), 'EX', 3600);
+        // console.log('Matches fetched from database and cached');
         return matches;
     } catch (error) {
         throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
@@ -44,7 +61,9 @@ async function getAllMatches({ page, limit }){
 
 async function updateMatch(id, data){
     try {
+        const cacheKey = `match:${id}`;
         const match = await matchRepository.update(id, data);
+        await redis.del(cacheKey);
         return match;
     } catch (error) {
         throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
@@ -53,6 +72,8 @@ async function updateMatch(id, data){
 
 async function deleteMatch(id){
     try {
+        const cacheKey = `match:${id}`;
+        await redis.del(cacheKey);
         const match = await matchRepository.destroy(id);
         return match;
     } catch (error) {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import BadmintonPageLayout from '../../components/badminton/BadmintonPageLayout';
 import { useNavigate } from 'react-router-dom';
+import { BADMINTON_SERVICE_URL } from '../../utils/api';
 
 const BadmintonLiveScoringPage = () => {
   const [matches, setMatches] = useState([]);
@@ -77,7 +78,7 @@ const BadmintonLiveScoringPage = () => {
 
   const fetchMatches = async () => {
     try {
-      const response = await fetch('https://juet-play.onrender.com/api/v1/match');
+      const response = await fetch(`${BADMINTON_SERVICE_URL}/api/v1/match`);
       if (response.ok) {
         const data = await response.json();
         const matchesArray = Array.isArray(data) ? data : (data?.data || []);
@@ -91,7 +92,7 @@ const BadmintonLiveScoringPage = () => {
             
             try {
               if (match.playerOneIds?.[0]) {
-                const playerOneRes = await fetch(`https://juet-play.onrender.com/api/v1/player/${match.playerOneIds[0]}`);
+                const playerOneRes = await fetch(`${BADMINTON_SERVICE_URL}/api/v1/player/${match.playerOneIds[0]}`);
                 if (playerOneRes.ok) {
                   const playerOneData = await playerOneRes.json();
                   playerOneName = playerOneData.data?.name || 'Unknown Player';
@@ -99,7 +100,7 @@ const BadmintonLiveScoringPage = () => {
               }
               
               if (match.playerTwoIds?.[0]) {
-                const playerTwoRes = await fetch(`https://juet-play.onrender.com/api/v1/player/${match.playerTwoIds[0]}`);
+                const playerTwoRes = await fetch(`${BADMINTON_SERVICE_URL}/api/v1/player/${match.playerTwoIds[0]}`);
                 if (playerTwoRes.ok) {
                   const playerTwoData = await playerTwoRes.json();
                   playerTwoName = playerTwoData.data?.name || 'Unknown Player';
@@ -132,7 +133,7 @@ const BadmintonLiveScoringPage = () => {
         if (!ids || ids.length === 0) return [];
         const names = await Promise.all(
           ids.map(async (id) => {
-            const res = await fetch(`https://juet-play.onrender.com/api/v1/player/${id}`);
+            const res = await fetch(`${BADMINTON_SERVICE_URL}/api/v1/player/${id}`);
             if (res.ok) {
               const data = await res.json();
               return data.data?.name || 'Unknown';
@@ -240,7 +241,7 @@ const BadmintonLiveScoringPage = () => {
 
       const updatedSets = [...(selectedMatch.sets || []), newSet];
       
-      const response = await fetch(`https://juet-play.onrender.com/api/v1/match/${selectedMatch._id}`, {
+      const response = await fetch(`${BADMINTON_SERVICE_URL}/api/v1/match/${selectedMatch._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -261,7 +262,7 @@ const BadmintonLiveScoringPage = () => {
           const matchWinnerId = playerOneSetsWon >= 2 ? selectedMatch.playerOneIds?.[0] : selectedMatch.playerTwoIds?.[0];
           setMatchWinner(playerOneSetsWon >= 2 ? 'one' : 'two');
           
-          await fetch(`https://juet-play.onrender.com/api/v1/match/${selectedMatch._id}`, {
+          await fetch(`${BADMINTON_SERVICE_URL}/api/v1/match/${selectedMatch._id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
