@@ -1,81 +1,157 @@
-# 🧪 Mongoose Backend Boilerplate
+# Football Service Backend
 
-A minimal and scalable Node.js + Express.js backend setup using **MongoDB** and **Mongoose**, following best practices.
+A complete backend service for managing football teams, players, and matches with real-time scoring capabilities.
 
----
+## Features
 
-## 📂 Folder Structure
+- **Team Management**: Create, update, delete, and view football teams
+- **Player Management**: Manage players with jersey numbers, positions, and statistics
+- **Match Management**: Create matches, track scores, and manage match events
+- **Business Logic**: Automatic team stats updates when matches are completed
+- **Caching**: Redis integration for improved performance
+- **Validation**: Jersey number uniqueness within teams, player deletion protection
 
+## Setup
+
+### Prerequisites
+
+- Node.js (v14 or higher)
+- MongoDB
+- Redis (optional, for caching)
+
+### Installation
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Create environment file:**
+   Create a `.env` file in the root directory:
+   ```env
+   PORT=3002
+   MONGO_URI=mongodb://localhost:27017/football-service
+   REDIS_URL=redis://localhost:6379
+   ```
+
+3. **Start the server:**
+   ```bash
+   npm run dev
+   ```
+
+The server will start on port 3002.
+
+## API Endpoints
+
+### Teams
+- `GET /api/v1/team` - Get all teams (with pagination)
+- `GET /api/v1/team/:id` - Get team by ID
+- `POST /api/v1/team/create` - Create a new team
+- `PUT /api/v1/team/:id` - Update team
+- `DELETE /api/v1/team/:id` - Delete team
+- `GET /api/v1/team/country/:country` - Get teams by country
+
+### Players
+- `GET /api/v1/player` - Get all players (with pagination)
+- `GET /api/v1/player/:id` - Get player by ID
+- `POST /api/v1/player/create` - Create a new player
+- `PUT /api/v1/player/:id` - Update player
+- `DELETE /api/v1/player/:id` - Delete player
+- `GET /api/v1/player/country/:country` - Get players by country
+
+### Matches
+- `GET /api/v1/match` - Get all matches (with pagination)
+- `GET /api/v1/match/:id` - Get match by ID
+- `POST /api/v1/match/create` - Create a new match
+- `PUT /api/v1/match/:id` - Update match
+- `DELETE /api/v1/match/:id` - Delete match
+
+## Data Models
+
+### Team
+```javascript
+{
+  name: String (required, unique),
+  coach: String (required),
+  country: String (required),
+  wins: Number (default: 0),
+  losses: Number (default: 0),
+  draws: Number (default: 0),
+  players: [Player IDs],
+  timestamps
+}
 ```
-.
-├── src/
-│   ├── config/
-│   ├── controllers/
-│   ├── middlewares/
-│   ├── models/
-│   ├── routes/
-│   ├── services/
-│   └── index.js
-├── .env
-├── package.json
-└── README.md
+
+### Player
+```javascript
+{
+  name: String (required),
+  age: Number (required),
+  gender: String (enum: male, female, other),
+  position: String (enum: goalkeeper, defender, midfielder, forward),
+  jerseyNumber: Number (required, 1-99),
+  country: String (required),
+  team: Team ID (optional),
+  goals: Number (default: 0),
+  assists: Number (default: 0),
+  yellowCards: Number (default: 0),
+  redCards: Number (default: 0),
+  timestamps
+}
 ```
 
----
+### Match
+```javascript
+{
+  homeTeam: Team ID (required),
+  awayTeam: Team ID (required),
+  homeScore: Number (default: 0),
+  awayScore: Number (default: 0),
+  date: Date (required),
+  status: String (enum: scheduled, ongoing, completed),
+  events: [{
+    minute: Number,
+    type: String (enum: goal, yellow_card, red_card, substitution),
+    player: Player ID,
+    team: Team ID,
+    description: String
+  }],
+  timestamps
+}
+```
 
-## 🚀 Getting Started
+## Business Logic
 
-### 1. Install dependencies
+### Team Stats Update
+When a match is marked as "completed", the system automatically updates the team statistics:
+- Home team wins: `homeTeam.wins++`, `awayTeam.losses++`
+- Away team wins: `awayTeam.wins++`, `homeTeam.losses++`
+- Draw: `homeTeam.draws++`, `awayTeam.draws++`
 
+### Player Deletion Protection
+Players cannot be deleted if they are:
+- Referenced in any team's players array
+- Referenced in any match events
+
+### Jersey Number Validation
+- Jersey numbers must be between 1-99
+- Jersey numbers must be unique within a team
+
+## Testing
+
+Run the integration test:
 ```bash
-npm install
+node test-integration.js
 ```
 
-### 2. Create a `.env` file in the root
+This will test all major endpoints and verify the backend is working correctly.
 
-```env
-PORT=3000
-MONGODB_URI=mongodb://localhost:27017/your-db-name
-# Or use MongoDB Atlas
-# MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/your-db-name
-```
+## Frontend Integration
 
-### 3. Run the server
+The frontend is configured to connect to this service at `http://localhost:3002`. Make sure the frontend API configuration points to the correct URL.
 
-```bash
-npm run dev
-```
+## CORS Configuration
 
----
-
-## ✅ Features
-
-- Mongoose model structure
-- Modular route/controller/service pattern
-- Environment config via `.env`
-- Error-handling middleware
-- Ready for REST APIs
-
----
-
-## 🔧 Customization
-
-- Add new models inside `src/models/`
-- Register new routes inside `src/routes/index.js`
-- Create controllers/services accordingly
-
----
-
-## 📦 Scripts
-
-| Command        | Description            |
-|----------------|------------------------|
-| `npm run dev`  | Start with nodemon     |
-| `npm start`    | Start normally         |
-
----
-
-## 🧠 Tips
-
-- Use MongoDB Atlas for production-grade hosting
-- Stick to modular MVC-like pattern for clean structure
+The service is configured to accept requests from:
+- `http://localhost:3000` (frontend development)
+- `https://juet-play.vercel.app` (production frontend)

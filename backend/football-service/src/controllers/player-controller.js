@@ -10,6 +10,7 @@ async function createPlayer(req, res) {
             age: req.body.age,
             gender: req.body.gender,
             position: req.body.position,
+            jerseyNumber: req.body.jerseyNumber,
             country: req.body.country,
             team: req.body.team,
             goals: req.body.goals,
@@ -43,13 +44,16 @@ async function getPlayerById(req, res) {
 // Get all players
 async function getAllPlayers(req, res) {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || 6;
+    // console.log(page, limit);
     try {
         const data = await PlayerService.getAllPlayers({ page, limit });
+        // console.log(data);
         SuccessResponse.data = data.results || data;
         SuccessResponse.total = data.total;
         SuccessResponse.page = data.page;
         SuccessResponse.pages = data.pages;
+        // console.log(SuccessResponse);
         return res.status(StatusCodes.OK).json(SuccessResponse);
     } catch (error) {
         ErrorResponse.message = error.message;

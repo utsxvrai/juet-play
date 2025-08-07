@@ -11,10 +11,16 @@ import BasketballTournamentsPage from './pages/basketball/BasketballTournamentsP
 // Football Imports
 import FootballMatchesPage from './pages/football/FootballMatchesPage';
 import FootballTeamsPage from './pages/football/FootballTeamsPage';
+import FootballPlayersPage from './pages/football/FootballPlayersPage';
+import AddFootballPlayerPage from './pages/football/AddFootballPlayerPage';
+import FootballMatchDetailsPage from './pages/football/match/FootballMatchDetailsPage';
+import FootballTeamDetailsPage from './pages/football/team/FootballTeamDetailsPage';
 
 // Volleyball Imports
 import VolleyballMatchesPage from './pages/volleyball/VolleyballMatchesPage';
 import VolleyballTeamsPage from './pages/volleyball/VolleyballTeamsPage';
+import VolleyballMatchDetailsPage from './pages/volleyball/match/VolleyballMatchDetailsPage';
+import VolleyballTeamDetailsPage from './pages/volleyball/team/VolleyballTeamDetailsPage';
 
 // Basketball Imports
 import BasketballMatchesPage from './pages/basketball/BasketballMatchesPage';
@@ -61,13 +67,17 @@ const App = () => {
       <Route path="/football" element={<FootballMatchesPage />} />
       <Route path="/football/matches" element={<FootballMatchesPage />} />
       <Route path="/football/teams" element={<FootballTeamsPage />} />
-      {/* TODO: Add /football/match/:matchId and /football/team/:teamId/details routes */}
+      <Route path="/football/players" element={<FootballPlayersPage />} />
+      <Route path="/football/players/add" element={<AddFootballPlayerPage />} />
+      <Route path="/football/match/:matchId" element={<FootballMatchDetailsPage />} />
+      <Route path="/football/team/:teamId" element={<FootballTeamDetailsPage />} />
       
       {/* Volleyball Routes */}
       <Route path="/volleyball" element={<VolleyballMatchesPage />} />
       <Route path="/volleyball/matches" element={<VolleyballMatchesPage />} />
       <Route path="/volleyball/teams" element={<VolleyballTeamsPage />} />
-      {/* TODO: Add /volleyball/match/:matchId and /volleyball/team/:teamId/details routes */}
+      <Route path="/volleyball/match/:matchId" element={<VolleyballMatchDetailsPage />} />
+      <Route path="/volleyball/team/:teamId" element={<VolleyballTeamDetailsPage />} />
 
       {/* Basketball Routes */}
       <Route path="/basketball" element={<BasketballMatchesPage />} />

@@ -1,6 +1,6 @@
 // export const BADMINTON_SERVICE_URL = 'http://localhost:3002';
 export const BADMINTON_SERVICE_URL = 'https://juet-play.onrender.com';
-export const FOOTBALL_SERVICE_URL = 'http://localhost:3003/api/v1';
+export const FOOTBALL_SERVICE_URL = 'http://localhost:3002';
 export const VOLLEYBALL_SERVICE_URL = 'http://localhost:3004/api/v1';
 export const BASKETBALL_SERVICE_URL = 'http://localhost:3005/api/v1';
 
@@ -12,13 +12,13 @@ export async function fetchPlayers(sport , { page = 1, limit = 6 } = {}) {
       // console.log(url);
       break;
     case 'football':
-      url = `${FOOTBALL_SERVICE_URL}/api/v1//player`;
+      url = `${FOOTBALL_SERVICE_URL}/api/v1/player`;
       break;
     case 'volleyball':
-      url = `${VOLLEYBALL_SERVICE_URL}/api/v1//player`;
+      url = `${VOLLEYBALL_SERVICE_URL}/api/v1/player`;
       break;
     case 'basketball':
-      url = `${BASKETBALL_SERVICE_URL}/api/v1//player`;
+      url = `${BASKETBALL_SERVICE_URL}/api/v1/player`;
       break;
     default:
       throw new Error('Invalid sport');

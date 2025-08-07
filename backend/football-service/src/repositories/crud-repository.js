@@ -26,9 +26,20 @@ class CrudRepository {
             throw new AppError(StatusCodes.INTERNAL_SERVER_ERROR, error.message);
         }
     }
-    async getAll(filter = {}) {
-        const response = await this.model.find(filter);
-        return response;
+    async getAll(filter = {}, { page = 1, limit = 6 } = {}) {
+        const skip = (page - 1) * limit;
+        const players = await this.model.find(filter)
+            .sort({ createdAt: -1 }) // ✅ ensure newest first
+            .skip(skip)
+            .limit(limit);  
+    
+        const total = await this.model.countDocuments(filter);
+        return {
+            results: players,
+            total,
+            page,
+            pages: Math.ceil(total / limit),
+        };
     }
 
 

@@ -44,21 +44,21 @@ async function getPlayerById(req, res) {
  * GET : /players
  */
 
-async function getAllPlayers(req, res) {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 6;
-    try {
-        const data = await PlayerService.getAllPlayers({ page, limit });
-        SuccessResponse.data = data.results;
-        SuccessResponse.total = data.total;
-        SuccessResponse.page = data.page;
-        SuccessResponse.pages = data.pages;
-        return res.status(StatusCodes.OK).json(SuccessResponse);
-    } catch (error) {
-        ErrorResponse.message = error.message;
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(ErrorResponse);
+    async function getAllPlayers(req, res) {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 6;
+        try {
+            const data = await PlayerService.getAllPlayers({ page, limit });
+            SuccessResponse.data = data.results;
+            SuccessResponse.total = data.total;
+            SuccessResponse.page = data.page;
+            SuccessResponse.pages = data.pages;
+            return res.status(StatusCodes.OK).json(SuccessResponse);
+        } catch (error) {
+            ErrorResponse.message = error.message;
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(ErrorResponse);
+        }
     }
-}
 
 /** * Update player by ID
  * PUT : /players/:id

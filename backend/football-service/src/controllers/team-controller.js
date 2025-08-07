@@ -40,10 +40,10 @@ async function getTeamById(req, res) {
 // Get all teams
 async function getAllTeams(req, res) {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || 6;
     try {
         const data = await TeamService.getAllTeams({ page, limit });
-        SuccessResponse.data = data.results || data;
+        SuccessResponse.data = data.results;
         SuccessResponse.total = data.total;
         SuccessResponse.page = data.page;
         SuccessResponse.pages = data.pages;

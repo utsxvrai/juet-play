@@ -19,6 +19,12 @@ const playerSchema = new mongoose.Schema({
     enum: ['goalkeeper', 'defender', 'midfielder', 'forward'],
     required: true,
   },
+  jerseyNumber: {
+    type: Number,
+    required: true,
+    min: 1,
+    max: 99,
+  },
   country: {
     type: String,
     required: true,

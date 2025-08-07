@@ -14,6 +14,10 @@ async function createTeam(data) {
             throw new AppError('Team name must be unique', StatusCodes.BAD_REQUEST);
         }
         const team = await teamRepository.create(data);
+        const keys = await redis.keys('teams:page:*');
+        if (keys.length > 0) {
+            await redis.del(...keys);
+        }
         return team;
     } catch (error) {
         throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
@@ -57,7 +61,16 @@ async function updateTeam(id, data) {
             }
         }
         const team = await teamRepository.update(id, data);
+        
+        // Invalidate individual team cache
         await redis.del(cacheKey);
+        
+        // Invalidate all teams list caches to ensure fresh data
+        const keys = await redis.keys('teams:page:*');
+        if (keys.length > 0) {
+            await redis.del(...keys);
+        }
+        
         return team;
     } catch (error) {
         throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
@@ -68,7 +81,16 @@ async function deleteTeam(id) {
     const cacheKey = `team:${id}`;
     try {
         const team = await teamRepository.destroy(id);
+        
+        // Invalidate individual team cache
         await redis.del(cacheKey);
+        
+        // Invalidate all teams list caches to ensure fresh data
+        const keys = await redis.keys('teams:page:*');
+        if (keys.length > 0) {
+            await redis.del(...keys);
+        }
+        
         return team;
     } catch (error) {
         throw new AppError('Error deleting team', StatusCodes.INTERNAL_SERVER_ERROR);

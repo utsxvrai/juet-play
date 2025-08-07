@@ -1,7 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AddTeamPageLayout from '../components/common/AddTeamPageLayout';
+import TeamAutocompleteInput from '../components/common/TeamAutocompleteInput';
 
 // Sport-specific role/position options
 const roleOptions = {
@@ -51,6 +52,8 @@ const AddTeamPage = () => {
   const [coach, setCoach] = useState('');
   const [arena, setArena] = useState('');
   const [players, setPlayers] = useState([]);
+  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [loadingTeam, setLoadingTeam] = useState(false);
   // Management login modal state
   const [showModal, setShowModal] = useState(true);
   const [login, setLogin] = useState({ email: '', password: '' });
@@ -59,11 +62,61 @@ const AddTeamPage = () => {
   const handleSportChange = (e) => {
     setSelectedSport(e.target.value);
     setPlayers(Array(sportsConfig[e.target.value].min).fill({ name: '', role: '', jerseyNumber: '' }));
+    setSelectedTeam(null);
+    setTeamName('');
+    setTeamId('');
   };
 
-  const handleTeamNameChange = (e) => {
-    setTeamName(e.target.value);
-    setTeamId(hashTeamName(e.target.value));
+  const handleTeamNameChange = (newTeamName) => {
+    setTeamName(newTeamName);
+    setTeamId(hashTeamName(newTeamName));
+    
+    // If team name matches a suggestion, load team data
+    if (newTeamName && selectedSport) {
+      loadTeamData(newTeamName);
+    }
+  };
+
+  const loadTeamData = async (teamName) => {
+    setLoadingTeam(true);
+    try {
+      const response = await fetch(`http://localhost:3002/api/v1/team?name=${encodeURIComponent(teamName)}&sport=${selectedSport.toUpperCase()}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data && data.data.length > 0) {
+          const team = data.data[0];
+          setSelectedTeam(team);
+          
+          // Auto-fill team details
+          setCoach(team.manager || '');
+          setArena(team.stadium || '');
+          
+          // Load players if they exist
+          if (team.players && team.players.length > 0) {
+            const formattedPlayers = team.players.map(player => ({
+              name: player.name || '',
+              role: player.position || player.role || '',
+              jerseyNumber: player.jerseyNumber || player.number || ''
+            }));
+            
+            // Ensure minimum players are met
+            const minPlayers = sportsConfig[selectedSport].min;
+            while (formattedPlayers.length < minPlayers) {
+              formattedPlayers.push({ name: '', role: '', jerseyNumber: '' });
+            }
+            
+            setPlayers(formattedPlayers);
+          } else {
+            // Set minimum required players
+            setPlayers(Array(sportsConfig[selectedSport].min).fill({ name: '', role: '', jerseyNumber: '' }));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading team data:', error);
+    } finally {
+      setLoadingTeam(false);
+    }
   };
 
   const handlePlayerChange = (index, e) => {
@@ -89,7 +142,17 @@ const AddTeamPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Prepare payload for backend
+    
+    // If team already exists, update it
+    if (selectedTeam) {
+      await updateExistingTeam();
+    } else {
+      // Create new team
+      await createNewTeam();
+    }
+  };
+
+  const createNewTeam = async () => {
     const payload = {
       name: teamName,
       sport: selectedSport.toUpperCase(),
@@ -101,10 +164,11 @@ const AddTeamPage = () => {
         role: p.role,
         sport: selectedSport.toUpperCase()
       })),
-      captain: 0 // Default: first player as captain
+      captain: 0
     };
+    
     try {
-      const res = await fetch('http://localhost:3001/api/v1/team/create', {
+      const res = await fetch('http://localhost:3002/api/v1/team/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -113,25 +177,41 @@ const AddTeamPage = () => {
       if (res.ok) {
         alert('Team created successfully!');
         navigate('/');
-
-
-// Sport-specific role/position options
-const roleOptions = {
-  cricket: [
-    'Batsman', 'Bowler', 'All-Rounder', 'Wicket-Keeper', 'Captain'
-  ],
-  football: [
-    'Goalkeeper', 'Defender', 'Midfielder', 'Forward', 'Captain'
-  ],
-  volleyball: [
-    'Setter', 'Outside Hitter', 'Opposite Hitter', 'Middle Blocker', 'Libero', 'Captain'
-  ],
-  basketball: [
-    'Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center', 'Captain'
-  ]
-};
       } else {
         alert(data.message || 'Failed to create team');
+      }
+    } catch (err) {
+      alert('Error connecting to backend');
+    }
+  };
+
+  const updateExistingTeam = async () => {
+    const payload = {
+      name: teamName,
+      sport: selectedSport.toUpperCase(),
+      manager: coach,
+      logo: selectedTeam.logo || '',
+      players: players.map(p => ({
+        name: p.name,
+        jerseyNumber: Number(p.jerseyNumber),
+        role: p.role,
+        sport: selectedSport.toUpperCase()
+      })),
+      captain: selectedTeam.captain || 0
+    };
+    
+    try {
+      const res = await fetch(`http://localhost:3002/api/v1/team/${selectedTeam._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert('Team updated successfully!');
+        navigate('/');
+      } else {
+        alert(data.message || 'Failed to update team');
       }
     } catch (err) {
       alert('Error connecting to backend');
@@ -197,9 +277,19 @@ const roleOptions = {
       {selectedSport && (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto bg-slate-800/70 p-6 md:p-10 rounded-xl shadow-2xl">
           <div>
-            <label className="block text-lg font-medium mb-2">Team Name</label>
-            <input type="text" value={teamName} onChange={handleTeamNameChange} required className="w-full bg-slate-700/50 border-slate-600 text-white rounded-md py-2 px-3" />
+            <TeamAutocompleteInput
+              value={teamName}
+              onChange={handleTeamNameChange}
+              label="Team Name"
+              placeholder="Type to search existing teams or enter new team name"
+            />
             {teamId && <p className="text-xs text-blue-300 mt-1">Team ID: <span className="font-mono">{teamId}</span></p>}
+            {selectedTeam && (
+              <div className="mt-2 p-3 bg-green-600/20 border border-green-500/30 rounded-lg">
+                <p className="text-green-400 text-sm font-medium">✓ Existing team found! Players will be auto-loaded.</p>
+                {loadingTeam && <p className="text-green-300 text-xs mt-1">Loading team data...</p>}
+              </div>
+            )}
           </div>
           <div>
             <label className="block text-lg font-medium mb-2">Coach</label>
@@ -212,7 +302,17 @@ const roleOptions = {
             </div>
           )}
           <div>
-            <label className="block text-lg font-medium mb-2">Players ({players.length})</label>
+            <div className="flex justify-between items-center mb-2">
+              <label className="block text-lg font-medium">Players ({players.length})</label>
+              <button 
+                type="button" 
+                onClick={addPlayerRow} 
+                disabled={players.length >= sportsConfig[selectedSport].max} 
+                className="text-sm text-blue-400 hover:text-blue-300 font-semibold py-1 px-3 border border-blue-600 hover:border-blue-500 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                + Add Player
+              </button>
+            </div>
             <div className="space-y-2">
               {players.map((player, idx) => (
                 <div key={idx} className="grid grid-cols-1 md:grid-cols-5 gap-2 items-center bg-slate-700/30 rounded-md p-2">
@@ -236,13 +336,12 @@ const roleOptions = {
                 </div>
               ))}
             </div>
-            <button type="button" onClick={addPlayerRow} disabled={players.length >= sportsConfig[selectedSport].max} className="mt-2 text-sm text-blue-400 hover:text-blue-300 font-semibold py-2 px-4 border border-blue-600 hover:border-blue-500 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-              + Add Player
-            </button>
             <p className="text-xs text-slate-400 mt-1">Squad size: {sportsConfig[selectedSport].min} to {sportsConfig[selectedSport].max}</p>
           </div>
           <div className="flex justify-end mt-8">
-            <button type="submit" className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-md transition-colors text-lg">Add Team</button>
+            <button type="submit" className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-md transition-colors text-lg">
+              {selectedTeam ? 'Update Team' : 'Add Team'}
+            </button>
           </div>
         </form>
       )}

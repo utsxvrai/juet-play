@@ -10,11 +10,19 @@ const playerRepository = new PlayerRepository();
 async function createPlayer(data) {
     try {
         const player = await playerRepository.create(data);
+
+        // Invalidate player lists cache
+        const keys = await redis.keys('players:page:*');
+        if (keys.length > 0) {
+            await redis.del(...keys);
+        }
+
         return player;
     } catch (error) {
         throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
     }
 }
+
 
 async function getPlayerById(id) {
     const cacheKey = `player:${id}`;
@@ -31,10 +39,13 @@ async function getPlayerById(id) {
 
 async function getAllPlayers({ page, limit }) {
     const cacheKey = `players:page:${page}:limit:${limit}`;
+    // console.log(cacheKey);
     try {
         const cachedPlayers = await redis.get(cacheKey);
+        // console.log(cachedPlayers);
         if (cachedPlayers) return JSON.parse(cachedPlayers);
         const players = await playerRepository.getAll({}, { page, limit });
+        // console.log(players);
         await redis.set(cacheKey, JSON.stringify(players), 'EX', 3600);
         return players;
     } catch (error) {
@@ -46,7 +57,16 @@ async function updatePlayer(id, data) {
     const cacheKey = `player:${id}`;
     try {
         const player = await playerRepository.update(id, data);
+        
+        // Invalidate individual player cache
         await redis.del(cacheKey);
+        
+        // Invalidate all players list caches to ensure fresh data
+        const keys = await redis.keys('players:page:*');
+        if (keys.length > 0) {
+            await redis.del(...keys);
+        }
+        
         return player;
     } catch (error) {
         throw new AppError('Error updating player', StatusCodes.INTERNAL_SERVER_ERROR);
@@ -67,7 +87,16 @@ async function deletePlayer(id) {
             throw new AppError('Cannot delete player: referenced in a match event', StatusCodes.BAD_REQUEST);
         }
         const player = await playerRepository.destroy(id);
+        
+        // Invalidate individual player cache
         await redis.del(cacheKey);
+        
+        // Invalidate all players list caches to ensure fresh data
+        const keys = await redis.keys('players:page:*');
+        if (keys.length > 0) {
+            await redis.del(...keys);
+        }
+        
         return player;
     } catch (error) {
         throw new AppError(error.message || 'Error deleting player', StatusCodes.INTERNAL_SERVER_ERROR);
