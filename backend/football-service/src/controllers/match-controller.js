@@ -43,7 +43,7 @@ async function getAllMatches(req, res) {
     const limit = parseInt(req.query.limit) || 10;
     try {
         const data = await MatchService.getAllMatches({ page, limit });
-        SuccessResponse.data = data.results || data;
+        SuccessResponse.data = data.results ;
         SuccessResponse.total = data.total;
         SuccessResponse.page = data.page;
         SuccessResponse.pages = data.pages;

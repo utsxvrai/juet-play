@@ -9,6 +9,7 @@ const FootballNavigation = ({ statusFilter, setStatusFilter }) => {
     { path: '/football/matches', label: 'Matches', icon: '⚽' },
     { path: '/football/teams', label: 'Teams', icon: '🏆' },
     { path: '/football/players', label: 'Players', icon: '👤' },
+    { path: '/football/live-scoring', label: 'Live Scoring', icon: '📊' },
   ];
 
   return (

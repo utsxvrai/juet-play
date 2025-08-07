@@ -15,6 +15,8 @@ import FootballPlayersPage from './pages/football/FootballPlayersPage';
 import AddFootballPlayerPage from './pages/football/AddFootballPlayerPage';
 import FootballMatchDetailsPage from './pages/football/match/FootballMatchDetailsPage';
 import FootballTeamDetailsPage from './pages/football/team/FootballTeamDetailsPage';
+import FootballLiveScoringPage from './pages/football/FootballLiveScoringPage';
+import FootballMatchScoringPage from './pages/football/FootballMatchScoringPage';
 
 // Volleyball Imports
 import VolleyballMatchesPage from './pages/volleyball/VolleyballMatchesPage';
@@ -71,6 +73,8 @@ const App = () => {
       <Route path="/football/players/add" element={<AddFootballPlayerPage />} />
       <Route path="/football/match/:matchId" element={<FootballMatchDetailsPage />} />
       <Route path="/football/team/:teamId" element={<FootballTeamDetailsPage />} />
+      <Route path="/football/live-scoring" element={<FootballLiveScoringPage />} />
+      <Route path="/football/live-scoring/:matchId" element={<FootballMatchScoringPage />} />
       
       {/* Volleyball Routes */}
       <Route path="/volleyball" element={<VolleyballMatchesPage />} />

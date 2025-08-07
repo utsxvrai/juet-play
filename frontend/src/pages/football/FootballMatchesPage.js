@@ -18,6 +18,7 @@ const FootballMatchesPage = () => {
     try {
       setLoading(true);
       const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/match?page=${pageNum}&limit=${limit}`);
+      console.log(response);
       if (!response.ok) {
         throw new Error('Failed to fetch matches');
       }
