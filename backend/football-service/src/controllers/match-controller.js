@@ -61,7 +61,14 @@ async function updateMatch(req, res) {
         if (!match) {
             return res.status(StatusCodes.NOT_FOUND).json(new ErrorResponse('Match not found'));
         }
-        SuccessResponse.data = match;
+        // Fetch the fully populated match (with team details)
+        const populatedMatch = await MatchService.getMatchById(req.params.id);
+        SuccessResponse.data = populatedMatch;
+        // Emit socket event for live updates
+        const io = req.app.get('io');
+        if (io) {
+            io.to(req.params.id).emit('scoreUpdate', populatedMatch);
+        }
         return res.status(StatusCodes.OK).json(SuccessResponse);
     } catch (error) {
         ErrorResponse.message = error.message;

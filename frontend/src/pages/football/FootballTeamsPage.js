@@ -18,7 +18,7 @@ const FootballTeamsPage = () => {
   const fetchTeams = async (pageNum = 1) => {
     try {
       setLoading(true);
-      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/team?page=${pageNum}&limit=${limit}`);
+      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/team?page=${pageNum}&limit=${limit}`);
       if (!response.ok) {
         throw new Error('Failed to fetch teams');
       }

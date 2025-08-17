@@ -22,7 +22,7 @@ const HostFootballPage = () => {
 
   const fetchTeams = async () => {
     try {
-      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/team`);
+      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/team`);
       if (response.ok) {
         const data = await response.json();
         setTeams(data.data || []);
@@ -68,7 +68,7 @@ const HostFootballPage = () => {
     };
 
     try {
-      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/match/create`, {
+      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/match/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

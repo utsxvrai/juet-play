@@ -45,7 +45,7 @@ const FootballPlayerCard = ({ player }) => {
       </div>
       <div className="mt-4 flex justify-end">
         <Link 
-          to={`/football/player/${_id}`}
+          to={`/football/players/${_id}`}
           className="inline-block bg-green-600 hover:bg-green-500 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-colors duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75"
         >
           View Details

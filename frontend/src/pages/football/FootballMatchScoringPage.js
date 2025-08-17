@@ -54,7 +54,7 @@ const FootballMatchScoringPage = () => {
   const fetchMatchDetails = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/match/${matchId}`);
+      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/match/${matchId}`);
       if (response.ok) {
         const data = await response.json();
         const matchData = data.data || data;
@@ -64,7 +64,7 @@ const FootballMatchScoringPage = () => {
         
         // Fetch team details
         if (matchData.homeTeam) {
-          const homeTeamRes = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/team/${matchData.homeTeam}`);
+          const homeTeamRes = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/team/${matchData.homeTeam}`);
           if (homeTeamRes.ok) {
             const homeTeamData = await homeTeamRes.json();
             setHomeTeam(homeTeamData.data || homeTeamData);
@@ -72,7 +72,7 @@ const FootballMatchScoringPage = () => {
             if (homeTeamData.data?.players) {
               const homePlayersRes = await Promise.all(
                 homeTeamData.data.players.map(async (playerId) => {
-                  const playerRes = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/player/${playerId}`);
+                  const playerRes = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/player/${playerId}`);
                   if (playerRes.ok) {
                     const playerData = await playerRes.json();
                     return playerData.data || playerData;
@@ -86,7 +86,7 @@ const FootballMatchScoringPage = () => {
         }
         
         if (matchData.awayTeam) {
-          const awayTeamRes = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/team/${matchData.awayTeam}`);
+          const awayTeamRes = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/team/${matchData.awayTeam}`);
           if (awayTeamRes.ok) {
             const awayTeamData = await awayTeamRes.json();
             setAwayTeam(awayTeamData.data || awayTeamData);
@@ -94,7 +94,7 @@ const FootballMatchScoringPage = () => {
             if (awayTeamData.data?.players) {
               const awayPlayersRes = await Promise.all(
                 awayTeamData.data.players.map(async (playerId) => {
-                  const playerRes = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/player/${playerId}`);
+                  const playerRes = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/player/${playerId}`);
                   if (playerRes.ok) {
                     const playerData = await playerRes.json();
                     return playerData.data || playerData;
@@ -179,7 +179,7 @@ const FootballMatchScoringPage = () => {
 
       const updatedEvents = [...(match.events || []), newEvent];
       
-      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/match/${matchId}`, {
+      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/match/${matchId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -224,7 +224,7 @@ const FootballMatchScoringPage = () => {
         setMatchWinner('draw');
       }
       
-      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/match/${matchId}`, {
+      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/match/${matchId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

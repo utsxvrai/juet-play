@@ -66,7 +66,7 @@ const FootballLiveScoringPage = () => {
 
   const fetchMatches = async () => {
     try {
-      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/match`);
+      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/match`);
       if (response.ok) {
         const data = await response.json();
         const matchesArray = Array.isArray(data) ? data : (data?.data || []);
@@ -80,7 +80,7 @@ const FootballLiveScoringPage = () => {
             
             try {
               if (match.homeTeam) {
-                const homeTeamRes = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/team/${match.homeTeam}`);
+                const homeTeamRes = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/team/${match.homeTeam}`);
                 if (homeTeamRes.ok) {
                   const homeTeamData = await homeTeamRes.json();
                   homeTeamName = homeTeamData.data?.name || 'Unknown Team';
@@ -88,7 +88,7 @@ const FootballLiveScoringPage = () => {
               }
               
               if (match.awayTeam) {
-                const awayTeamRes = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/team/${match.awayTeam}`);
+                const awayTeamRes = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/team/${match.awayTeam}`);
                 if (awayTeamRes.ok) {
                   const awayTeamData = await awayTeamRes.json();
                   awayTeamName = awayTeamData.data?.name || 'Unknown Team';
@@ -161,7 +161,7 @@ const FootballLiveScoringPage = () => {
 
       const updatedEvents = [...(selectedMatch.events || []), newEvent];
       
-      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/match/${selectedMatch._id}`, {
+      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/match/${selectedMatch._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -202,7 +202,7 @@ const FootballLiveScoringPage = () => {
         setMatchWinner('draw');
       }
       
-      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/match/${selectedMatch._id}`, {
+      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/match/${selectedMatch._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

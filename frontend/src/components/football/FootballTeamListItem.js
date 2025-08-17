@@ -17,7 +17,7 @@ const FootballTeamListItem = ({ team }) => {
         </div>
         <div className="mt-4 flex justify-end">
           <Link 
-            to={`/football/team/${id}`}
+            to={`/football/teams/${id}`}
             className="inline-block bg-teal-600 hover:bg-teal-500 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-colors duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-opacity-75"
           >
             View Details

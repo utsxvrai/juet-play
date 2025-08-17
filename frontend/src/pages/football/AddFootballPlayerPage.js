@@ -26,7 +26,7 @@ const AddFootballPlayerPage = () => {
   useEffect(() => {
     const fetchTeams = async () => {
       try {
-        const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/team?page=1&limit=100`);
+        const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/team?page=1&limit=100`);
         if (response.ok) {
           const data = await response.json();
           setTeams(data.data || []);
@@ -60,7 +60,7 @@ const AddFootballPlayerPage = () => {
 
       // Check if jersey number is already taken by the team
       if (formData.team) {
-        const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/player?page=1&limit=100`);
+        const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/player?page=1&limit=100`);
         if (response.ok) {
           const data = await response.json();
           const existingPlayer = data.data?.find(player => 
@@ -73,7 +73,7 @@ const AddFootballPlayerPage = () => {
         }
       }
 
-      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/player/create`, {
+      const response = await fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/player/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

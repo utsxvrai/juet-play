@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import TournamentTeamList from '../../components/common/TournamentTeamList';
+import { FOOTBALL_SERVICE_URL } from '../../utils/api';
 
 const FootballTournamentsPage = () => {
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:3002/api/v1/tournament')
+    fetch(`${FOOTBALL_SERVICE_URL}/api/v1/football/tournament`)
       .then(res => res.json())
       .then(data => {
         setTournaments(data);

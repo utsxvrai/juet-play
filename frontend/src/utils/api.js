@@ -1,6 +1,6 @@
 // export const BADMINTON_SERVICE_URL = 'http://localhost:3002';
-export const BADMINTON_SERVICE_URL = 'https://juet-play.onrender.com';
-export const FOOTBALL_SERVICE_URL = 'https://juet-play.onrender.com';
+export const BADMINTON_SERVICE_URL = 'https://juet-play.onrender.com'; 
+export const FOOTBALL_SERVICE_URL = 'http://localhost:3002';
 export const VOLLEYBALL_SERVICE_URL = 'http://localhost:3004/api/v1';
 export const BASKETBALL_SERVICE_URL = 'http://localhost:3005/api/v1';
 
@@ -12,7 +12,7 @@ export async function fetchPlayers(sport , { page = 1, limit = 6 } = {}) {
       // console.log(url);
       break;
     case 'football':
-      url = `${FOOTBALL_SERVICE_URL}/api/v1/player`;
+      url = `${FOOTBALL_SERVICE_URL}/api/v1/football/player`;
       break;
     case 'volleyball':
       url = `${VOLLEYBALL_SERVICE_URL}/api/v1/player`;
@@ -52,7 +52,7 @@ export async function fetchMatchesBySport(sport, { page = 1, limit = 6 } = {}) {
       url = `${BADMINTON_SERVICE_URL}/api/v1/match?page=${page}&limit=${limit}`;
       break;
     case 'football':
-      url = `${FOOTBALL_SERVICE_URL}/match?page=${page}&limit=${limit}`;
+      url = `${FOOTBALL_SERVICE_URL}/api/v1/football/match?page=${page}&limit=${limit}`;
       break;
     case 'volleyball':
       url = `${VOLLEYBALL_SERVICE_URL}/match?page=${page}&limit=${limit}`;
