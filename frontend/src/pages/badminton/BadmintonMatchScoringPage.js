@@ -3,7 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import BadmintonPageLayout from '../../components/badminton/BadmintonPageLayout';
 import { io } from 'socket.io-client';
 
-const socket = io('https://juet-play.onrender.com');
+const link = 'https://juet-play.onrender.com';
+// const localLink = 'http://localhost:3001';
+const socket = io(link);
+// const socket = io(localLink);
 
 const BadmintonMatchScoringPage = () => {
   const { matchid } = useParams();
@@ -26,6 +29,7 @@ const BadmintonMatchScoringPage = () => {
     const fetchMatch = async () => {
       try {
         const response = await fetch(`https://juet-play.onrender.com/api/v1/match/${matchid}`);
+        // const response = await fetch(`${localLink}/api/v1/match/${matchid}`);
         if (response.ok) {
           const data = await response.json();
           setMatch(data.data || data);
@@ -53,7 +57,8 @@ const BadmintonMatchScoringPage = () => {
       if (!ids || ids.length === 0) return [];
       const names = await Promise.all(
         ids.map(async (id) => {
-          const res = await fetch(`https://juet-play.onrender.com/api/v1/player/${id}`);
+          const res = await fetch(`${link}/api/v1/player/${id}`);
+          // const res = await fetch(`${localLink}/api/v1/player/${id}`);
           if (res.ok) {
             const data = await res.json();
             return data.data?.name || 'Unknown';
@@ -89,18 +94,47 @@ const BadmintonMatchScoringPage = () => {
         setPlayerOneScore(0);
         setPlayerTwoScore(0);
         setCurrentServer(lastSet.winnerId === match.playerOneIds?.[0] ? 'one' : 'two');
+        console.log('Starting new set:', lastSet.setNumber + 1);
       } else {
-        // Continue the last set in progress
+        // CRITICAL FIX: Continue the last set in progress - restore scores from backend
         setCurrentSet(lastSet.setNumber);
         setPlayerOneScore(lastSet.playerOneScore || 0);
         setPlayerTwoScore(lastSet.playerTwoScore || 0);
-        setCurrentServer(currentServer => currentServer); // keep as is
+        // Determine server from the score
+        const totalPoints = (lastSet.playerOneScore || 0) + (lastSet.playerTwoScore || 0);
+        if (totalPoints === 0) {
+          setCurrentServer('one');
+        } else {
+          // Last point winner serves
+          setCurrentServer(currentServer); 
+        }
+        console.log('Restored in-progress set:', lastSet.setNumber, 'scores:', lastSet.playerOneScore, '-', lastSet.playerTwoScore);
       }
     } else {
-      setCurrentSet(1);
-      setPlayerOneScore(0);
-      setPlayerTwoScore(0);
-      setCurrentServer('one');
+      // No sets yet, check localStorage for backup
+      const localStorageKey = `match_${match?._id}_scores`;
+      const savedScores = localStorage.getItem(localStorageKey);
+      if (savedScores) {
+        try {
+          const parsed = JSON.parse(savedScores);
+          setCurrentSet(parsed.currentSet || 1);
+          setPlayerOneScore(parsed.playerOneScore || 0);
+          setPlayerTwoScore(parsed.playerTwoScore || 0);
+          setCurrentServer(parsed.currentServer || 'one');
+          console.log('Restored scores from localStorage:', parsed);
+        } catch (e) {
+          console.error('Failed to parse localStorage scores:', e);
+          setCurrentSet(1);
+          setPlayerOneScore(0);
+          setPlayerTwoScore(0);
+          setCurrentServer('one');
+        }
+      } else {
+        setCurrentSet(1);
+        setPlayerOneScore(0);
+        setPlayerTwoScore(0);
+        setCurrentServer('one');
+      }
     }
     setSetWinner(null);
     setMatchWinner(null);
@@ -112,6 +146,7 @@ const BadmintonMatchScoringPage = () => {
     let newPlayerOneScore = playerOneScore;
     let newPlayerTwoScore = playerTwoScore;
     let newServer = currentServer;
+    
     if (player === 'one') {
       if (action === 'increment') {
         newPlayerOneScore = Math.min(playerOneScore + 1, 30);
@@ -127,10 +162,23 @@ const BadmintonMatchScoringPage = () => {
         newPlayerTwoScore = Math.max(playerTwoScore - 1, 0);
       }
     }
+    
+    // Update state immediately for responsive UI
     setPlayerOneScore(newPlayerOneScore);
     setPlayerTwoScore(newPlayerTwoScore);
     setCurrentServer(newServer);
-    // Save the current set progress to the backend for real-time DB update
+    
+    // CRITICAL FIX: Save to localStorage as backup for offline resilience
+    const localStorageKey = `match_${matchid}_scores`;
+    localStorage.setItem(localStorageKey, JSON.stringify({
+      currentSet,
+      playerOneScore: newPlayerOneScore,
+      playerTwoScore: newPlayerTwoScore,
+      currentServer: newServer,
+      timestamp: new Date().toISOString()
+    }));
+    
+    // Save the current set progress to the backend for persistence
     if (match) {
       const sets = [...(match.sets || [])];
       // Always update the last set in progress (or create if none)
@@ -138,7 +186,7 @@ const BadmintonMatchScoringPage = () => {
       if (setIdx === -1 || sets[setIdx].winnerId) {
         // No set in progress, create new
         sets.push({
-          setNumber: sets.length + 1,
+          setNumber: currentSet,
           playerOneScore: newPlayerOneScore,
           playerTwoScore: newPlayerTwoScore,
           winnerId: null
@@ -151,12 +199,20 @@ const BadmintonMatchScoringPage = () => {
           playerTwoScore: newPlayerTwoScore
         };
       }
-      // Save to backend
-      fetch(`https://juet-play.onrender.com/api/v1/match/${match._id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sets, status: 'ongoing' })
-      });
+      
+      // Save to backend - don't await to keep UI responsive
+      try {
+        await fetch(`${link}/api/v1/match/${match._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sets, status: 'ongoing' })
+        });
+        console.log('Score saved to backend successfully');
+      } catch (error) {
+        console.error('Failed to save score to backend:', error);
+        setError('Failed to save score. Please check your connection.');
+        setTimeout(() => setError(''), 3000);
+      }
     }
   };
 
@@ -219,6 +275,16 @@ const BadmintonMatchScoringPage = () => {
           status: 'ongoing'
         }),
       });
+      // const response = await fetch(`${localLink}/api/v1/match/${match._id}`, {
+      //   method: 'PUT',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({
+      //     sets: updatedSets,
+      //     status: 'ongoing'
+      //   }),
+      // });
       if (response.ok) {
         const playerOneSetsWon = updatedSets.filter(set => set.winnerId === match.playerOneIds?.[0]).length;
         const playerTwoSetsWon = updatedSets.filter(set => set.winnerId === match.playerTwoIds?.[0]).length;
@@ -236,6 +302,17 @@ const BadmintonMatchScoringPage = () => {
               completedAt: new Date().toISOString()
             }),
           });
+          // const response = await fetch(`${localLink}/api/v1/match/${match._id}`, {
+          //   method: 'PUT',
+          //   headers: {
+          //     'Content-Type': 'application/json',
+          //   },
+          //   body: JSON.stringify({
+          //     status: 'completed',
+          //     winnerId: matchWinnerId,
+          //     completedAt: new Date().toISOString()
+          //   }),
+          // });
           setShowMatchCompleteModal(true);
         } else {
           setCurrentSet(prev => prev + 1);
@@ -246,6 +323,7 @@ const BadmintonMatchScoringPage = () => {
         }
         // Refresh match
         const updatedMatch = await fetch(`https://juet-play.onrender.com/api/v1/match/${match._id}`);
+        // const updatedMatch = await fetch(`${localLink}/api/v1/match/${match._id}`);
         if (updatedMatch.ok) {
           const data = await updatedMatch.json();
           setMatch(data.data || data);

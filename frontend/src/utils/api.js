@@ -1,4 +1,4 @@
-// export const BADMINTON_SERVICE_URL = 'http://localhost:3002';
+// export const BADMINTON_SERVICE_URL = 'http://localhost:3001';
 export const BADMINTON_SERVICE_URL = 'https://juet-play.onrender.com'; 
 export const FOOTBALL_SERVICE_URL = 'http://localhost:3002';
 export const VOLLEYBALL_SERVICE_URL = 'http://localhost:3004/api/v1';

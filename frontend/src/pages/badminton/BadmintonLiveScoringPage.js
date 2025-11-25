@@ -32,6 +32,17 @@ const BadmintonLiveScoringPage = () => {
     }
   }, [isAuthenticated]);
 
+  // CRITICAL FIX: Auto-refresh match list every 15 seconds to show new matches
+  useEffect(() => {
+    if (isAuthenticated) {
+      const interval = setInterval(() => {
+        fetchMatches();
+      }, 15000); // 15 seconds
+      
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated]);
+
   useEffect(() => {
     if (selectedMatch) {
       fetchPlayerNames();
@@ -49,12 +60,20 @@ const BadmintonLiveScoringPage = () => {
     return aTime - bTime;
   };
 
+  // CRITICAL FIX: Normalize status to lowercase for consistent comparison
   // Split matches into ongoing and scheduled (case-insensitive)
-  const ongoingMatches = matchesWithNames.filter(m => (m.status && (m.status.toLowerCase() === 'live' || m.status.toLowerCase() === 'ongoing'))).sort(sortByScheduledTime);
-  const scheduledMatches = matchesWithNames.filter(m => m.status && m.status.toLowerCase() === 'scheduled').sort(sortByScheduledTime);
+  const ongoingMatches = matchesWithNames.filter(m => {
+    const status = (m.status || '').toLowerCase();
+    return status === 'live' || status === 'ongoing';
+  }).sort(sortByScheduledTime);
+  
+  const scheduledMatches = matchesWithNames.filter(m => {
+    const status = (m.status || '').toLowerCase();
+    return status === 'scheduled';
+  }).sort(sortByScheduledTime);
 
-  // DEBUG: Log matchesWithNames and their statuses
-  console.log('matchesWithNames:', matchesWithNames.map(m => ({id: m._id, status: m.status})));
+  console.log('Match statuses:', matchesWithNames.map(m => ({ id: m._id, status: m.status })));
+  console.log('Ongoing matches:', ongoingMatches.length, 'Scheduled matches:', scheduledMatches.length);
 
   const handlePinSubmit = (e) => {
     e.preventDefault();
@@ -119,9 +138,13 @@ const BadmintonLiveScoringPage = () => {
         );
         
         setMatchesWithNames(matchesWithPlayerNames);
+      } else {
+        console.error('Failed to fetch matches:', response.status);
+        setError('Failed to load matches');
       }
     } catch (error) {
       console.error('Error fetching matches:', error);
+      setError('Failed to load matches. Please check your connection.');
     }
   };
 

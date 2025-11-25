@@ -3,41 +3,62 @@ import BadmintonPageLayout from '../../components/badminton/BadmintonPageLayout'
 import BadmintonMatchCard from '../../components/badminton/BadmintonMatchCard';
 import { Link } from 'react-router-dom';
 import { fetchMatchesBySport } from '../../utils/api';
-// import {BADMINTON_SERVICE_URL} from '../../utils/api';
-// console.log(`BADMINTON_SERVICE_URL1: ${BADMINTON_SERVICE_URL}`); 
 
 const BadmintonMatchesPage = () => {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
   
   // Pagination state
   const [page, setPage] = useState(1);
-  const [limit] = useState(6); // fixed 6 per page, can make dynamic if you want
+  const [limit] = useState(6); // fixed 6 per page
   const [totalPages, setTotalPages] = useState(1);
 
+  const loadMatches = async (showRefreshIndicator = false) => {
+    try {
+      if (showRefreshIndicator) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      
+      const data = await fetchMatchesBySport('badminton', { page, limit });
+      
+      // Ensure matchesArray is always an array
+      const matchesArray = Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data)
+          ? data
+          : [];
+          
+      setMatches(matchesArray);
+      setTotalPages(data.pages || 1);
+      setError('');
+    } catch (err) {
+      console.error('Error fetching matches:', err);
+      setError('Failed to load matches. Please try again.');
+      setMatches([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Initial load and when page changes
   useEffect(() => {
-    setLoading(true);
-    fetchMatchesBySport('badminton', { page, limit })
-      .then(data => {
-        // Ensure matchesArray is always an array
-        const matchesArray = Array.isArray(data?.data)
-          ? data.data
-          : Array.isArray(data)
-            ? data
-            : [];
-        setMatches(matchesArray);
-        setTotalPages(data.pages || 1);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching matches:', err);
-        setError('Failed to load matches');
-        setMatches([]); // always an array
-        setLoading(false);
-      });
+    loadMatches();
   }, [page, limit]);
-   // refetch when page or limit changes
+
+  // CRITICAL FIX: Auto-refresh every 30 seconds to show newly created matches
+  // This compensates for any cache issues and keeps the list up-to-date
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadMatches(true); // Silent refresh without showing loading state
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [page, limit]);
 
   const handlePrev = () => {
     if (page > 1) setPage(page - 1);
@@ -47,10 +68,22 @@ const BadmintonMatchesPage = () => {
     if (page < totalPages) setPage(page + 1);
   };
 
+  const handleManualRefresh = () => {
+    loadMatches(true);
+  };
+
   if (error) {
     return (
       <BadmintonPageLayout title="Badminton Games">
-        <div className="text-red-400 text-center">{error}</div>
+        <div className="text-red-400 text-center mb-4">{error}</div>
+        <div className="text-center">
+          <button 
+            onClick={handleManualRefresh}
+            className="bg-orange-600 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
       </BadmintonPageLayout>
     );
   }
@@ -66,6 +99,13 @@ const BadmintonMatchesPage = () => {
             Live Scoring
           </Link>
         </div>
+        <button
+          onClick={handleManualRefresh}
+          disabled={refreshing}
+          className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-colors duration-300 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {refreshing ? 'Refreshing...' : '🔄 Refresh'}
+        </button>
       </div>
       
       {loading ? (

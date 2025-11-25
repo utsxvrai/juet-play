@@ -16,24 +16,44 @@ const HostBadmintonPage = () => {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filteredPlayers, setFilteredPlayers] = useState([]);
+  
+  // CRITICAL FIX: Separate search states for each side to support doubles properly
+  const [searchTermPlayerOne, setSearchTermPlayerOne] = useState('');
+  const [searchTermPlayerTwo, setSearchTermPlayerTwo] = useState('');
+  const [filteredPlayersOne, setFilteredPlayersOne] = useState([]);
+  const [filteredPlayersTwo, setFilteredPlayersTwo] = useState([]);
+  
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchPlayers();
   }, []);
 
+  // Filter players for Player One search
   useEffect(() => {
-    if (searchTerm) {
+    if (searchTermPlayerOne) {
       const filtered = players.filter(player =>
-        player.name.toLowerCase().includes(searchTerm.toLowerCase())
+        player.name.toLowerCase().includes(searchTermPlayerOne.toLowerCase()) &&
+        !formData.playerOneIds.includes(player._id) // Don't show already selected players
       );
-      setFilteredPlayers(filtered);
+      setFilteredPlayersOne(filtered);
     } else {
-      setFilteredPlayers([]);
+      setFilteredPlayersOne([]);
     }
-  }, [searchTerm, players]);
+  }, [searchTermPlayerOne, players, formData.playerOneIds]);
+
+  // Filter players for Player Two search
+  useEffect(() => {
+    if (searchTermPlayerTwo) {
+      const filtered = players.filter(player =>
+        player.name.toLowerCase().includes(searchTermPlayerTwo.toLowerCase()) &&
+        !formData.playerTwoIds.includes(player._id) // Don't show already selected players
+      );
+      setFilteredPlayersTwo(filtered);
+    } else {
+      setFilteredPlayersTwo([]);
+    }
+  }, [searchTermPlayerTwo, players, formData.playerTwoIds]);
 
   const fetchPlayers = async () => {
     try {
@@ -44,15 +64,29 @@ const HostBadmintonPage = () => {
       }
     } catch (error) {
       console.error('Error fetching players:', error);
+      setError('Failed to load players. Please refresh the page.');
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // CRITICAL FIX: Reset player selections when format changes
+    if (name === 'format') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        playerOneIds: [],
+        playerTwoIds: []
+      }));
+      setSearchTermPlayerOne('');
+      setSearchTermPlayerTwo('');
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handlePlayerSelect = (playerId, side) => {
@@ -61,14 +95,16 @@ const HostBadmintonPage = () => {
         ...prev,
         playerOneIds: formData.format === 'singles' ? [playerId] : [...prev.playerOneIds, playerId].slice(0, 2)
       }));
+      setSearchTermPlayerOne('');
+      setFilteredPlayersOne([]);
     } else {
       setFormData(prev => ({
         ...prev,
         playerTwoIds: formData.format === 'singles' ? [playerId] : [...prev.playerTwoIds, playerId].slice(0, 2)
       }));
+      setSearchTermPlayerTwo('');
+      setFilteredPlayersTwo([]);
     }
-    setSearchTerm('');
-    setFilteredPlayers([]);
   };
 
   const removePlayer = (playerId, side) => {
@@ -85,56 +121,86 @@ const HostBadmintonPage = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
+  const validateForm = () => {
     // Validation
     if (!formData.hostId.trim()) {
       setError('Host ID is required');
-      setLoading(false);
-      return;
+      return false;
     }
 
     if (formData.playerOneIds.length === 0 || formData.playerTwoIds.length === 0) {
       setError('Please select players for both sides');
-      setLoading(false);
-      return;
+      return false;
     }
 
     if (formData.format === 'singles' && (formData.playerOneIds.length > 1 || formData.playerTwoIds.length > 1)) {
       setError('Singles matches can only have one player per side');
-      setLoading(false);
-      return;
+      return false;
     }
 
     if (formData.format === 'doubles' && (formData.playerOneIds.length !== 2 || formData.playerTwoIds.length !== 2)) {
       setError('Doubles matches must have exactly 2 players per side');
+      return false;
+    }
+
+    return true;
+  };
+
+  const createMatch = async (status, redirectPath) => {
+    setLoading(true);
+    setError('');
+
+    if (!validateForm()) {
       setLoading(false);
-      return;
+      return null;
     }
 
     try {
+      const matchData = {
+        ...formData,
+        status: status || formData.status
+      };
+
       const response = await fetch(`${BADMINTON_SERVICE_URL}/api/v1/match/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(matchData),
       });
 
       if (response.ok) {
-        navigate('/badminton');
+        const data = await response.json();
+        const matchId = data.data?._id || data._id;
+        
+        if (redirectPath && matchId) {
+          navigate(redirectPath.replace(':matchid', matchId));
+        } else {
+          navigate('/badminton');
+        }
+        return data;
       } else {
         const errorData = await response.json();
         setError(errorData.message || 'Failed to create match');
+        return null;
       }
     } catch (error) {
       setError('Failed to create match. Please try again.');
+      console.error('Error creating match:', error);
+      return null;
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await createMatch('scheduled', null);
+  };
+
+  const handleStartMatch = async (e) => {
+    e.preventDefault();
+    await createMatch('ongoing', '/live-scoring/:matchid');
   };
 
   const getPlayerName = (playerId) => {
@@ -212,14 +278,14 @@ const HostBadmintonPage = () => {
                 <div className="relative">
                   <input
                     type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={searchTermPlayerOne}
+                    onChange={(e) => setSearchTermPlayerOne(e.target.value)}
                     placeholder="Search for players..."
                     className="w-full bg-slate-700/50 border-slate-600 text-white rounded-md shadow-sm py-2 px-3 focus:ring-orange-500 focus:border-orange-500"
                   />
-                  {filteredPlayers.length > 0 && (
+                  {filteredPlayersOne.length > 0 && (
                     <div className="absolute z-10 w-full bg-slate-700 border border-slate-600 rounded-md mt-1 max-h-40 overflow-y-auto">
-                      {filteredPlayers.map(player => (
+                      {filteredPlayersOne.map(player => (
                         <button
                           key={player._id}
                           type="button"
@@ -261,14 +327,14 @@ const HostBadmintonPage = () => {
                 <div className="relative">
                   <input
                     type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={searchTermPlayerTwo}
+                    onChange={(e) => setSearchTermPlayerTwo(e.target.value)}
                     placeholder="Search for players..."
                     className="w-full bg-slate-700/50 border-slate-600 text-white rounded-md shadow-sm py-2 px-3 focus:ring-orange-500 focus:border-orange-500"
                   />
-                  {filteredPlayers.length > 0 && (
+                  {filteredPlayersTwo.length > 0 && (
                     <div className="absolute z-10 w-full bg-slate-700 border border-slate-600 rounded-md mt-1 max-h-40 overflow-y-auto">
-                      {filteredPlayers.map(player => (
+                      {filteredPlayersTwo.map(player => (
                         <button
                           key={player._id}
                           type="button"
@@ -318,14 +384,27 @@ const HostBadmintonPage = () => {
             </select>
           </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-orange-600 hover:bg-orange-500 text-white font-semibold py-3 px-6 rounded-lg text-lg transition-colors duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Creating Match...' : 'Create Match'}
-          </button>
+          {/* Submit Buttons */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Create Match Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-slate-600 hover:bg-slate-500 text-white font-semibold py-3 px-6 rounded-lg text-lg transition-colors duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Creating...' : 'Create Match'}
+            </button>
+            
+            {/* Start Match Button */}
+            <button
+              type="button"
+              onClick={handleStartMatch}
+              disabled={loading}
+              className="w-full bg-orange-600 hover:bg-orange-500 text-white font-semibold py-3 px-6 rounded-lg text-lg transition-colors duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Starting...' : '🎯 Start Match'}
+            </button>
+          </div>
         </form>
       </div>
     </BadmintonPageLayout>
